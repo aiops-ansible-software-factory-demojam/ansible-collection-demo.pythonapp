@@ -1,0 +1,24 @@
+---
+- name: Verify the test machine identities
+  ansible.builtin.import_playbook: ../utils/playbooks/verify.yml
+
+- name: Verify application behavior and system policy
+  hosts: molecule
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Verify the real vulnerability regression
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/python3.12
+          - /opt/invoice-portal/current/app/probe.py
+          - http://127.0.0.1
+          - --expect
+          - remediated
+      changed_when: false
+
+    - name: Require SELinux enforcing after deployment
+      ansible.builtin.command: getenforce
+      register: invoice_selinux
+      changed_when: false
+      failed_when: invoice_selinux.stdout | trim != 'Enforcing'

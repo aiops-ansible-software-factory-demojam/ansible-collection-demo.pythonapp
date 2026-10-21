@@ -1,0 +1,16 @@
+---
+invoice_portal_root: /opt/invoice-portal
+invoice_portal_user: invoice-portal
+invoice_portal_port: 80
+invoice_portal_python: /usr/bin/python3.12
+invoice_portal_source_revision: ''
+invoice_portal_expected: vulnerable
+invoice_portal_repository_username: ''
+invoice_portal_repository_token: ''
+invoice_portal_signing_key: ''
+invoice_portal_signing_key_sha256: ''
+invoice_portal_artifact: {}
+invoice_portal_release_id: "{{ invoice_portal_artifact.sha256 }}-{{ invoice_portal_source_revision }}"
+# Artifact approval is supplied by trusted material, separately from candidate data.
+invoice_portal_package: PyPDF2
+invoice_portal_approved_artifact: "{{ invoice_material[invoice_release_channel] }}"

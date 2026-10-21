@@ -1,0 +1,58 @@
+---
+# Forgejo expands the origin URL when generating a collection.
+schemaVersion: 2.2.2
+metadata:
+  name: ansible-collection
+  displayName: Ansible collection workspace
+  tags:
+    - Ansible
+projects:
+  - name: collection
+    git:
+      remotes:
+        origin: https://github.com/aiops-ansible-software-factory-demojam/ansible-collection-demo.pythonapp.git
+      checkoutFrom:
+        revision: main
+components:
+  - name: tools
+    container:
+      image: ghcr.io/ansible/community-ansible-dev-tools@sha256:775c81d53058009dd47b97872f4a86d3b0a9ce16ad9af3cc48514ce4197aa787
+      memoryLimit: 2Gi
+      memoryRequest: 512Mi
+      cpuRequest: 250m
+      mountSources: true
+commands:
+  - id: deps
+    exec:
+      label: install collection dependencies
+      component: tools
+      commandLine: ansible-galaxy collection install -r extensions/molecule/requirements-test.yml
+      workingDir: /projects/collection
+      group:
+        kind: build
+        isDefault: true
+  - id: lint
+    exec:
+      label: ansible-lint
+      component: tools
+      commandLine: ansible-lint
+      workingDir: /projects/collection
+      group:
+        kind: test
+        isDefault: true
+  - id: molecule-test
+    exec:
+      label: molecule test (CentOS Stream 10 KubeVirt VM)
+      component: tools
+      commandLine: make molecule
+      workingDir: /projects/collection
+      group:
+        kind: test
+  - id: build
+    exec:
+      label: build Ansible collection
+      component: tools
+      commandLine: ansible-galaxy collection build --output-path /tmp
+      workingDir: /projects/collection
+      group:
+        kind: test

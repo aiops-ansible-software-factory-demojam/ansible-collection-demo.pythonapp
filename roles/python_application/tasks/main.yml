@@ -1,0 +1,123 @@
+---
+- name: Validate the invoice release contract
+  ansible.builtin.assert:
+    that:
+      - python_application_probe_argv | length > 0
+      - python_application_command | length > 0
+      - python_application_source | length > 0
+      - python_application_source_revision is match('^[0-9a-f]{40}$')
+      - python_application_artifact.channel | default('') in ['baseline', 'lightwell']
+      - python_application_artifact.sha256 | default('') is match('^[0-9a-f]{64}$')
+      - python_application_artifact.filename | default('') is match('^[A-Za-z0-9_.+-]+[.]whl$')
+      - python_application_artifact.version | default('') | length > 0
+      - python_application_artifact.url | default('') is match('^https://')
+      - python_application_root is match('^/opt/[a-zA-Z0-9_-]+$')
+      - python_application_service is match('^[a-zA-Z0-9_-]+$')
+      - python_application_port | int > 0
+      - python_application_port | int < 65536
+    fail_msg: Select an exact source commit and a complete approved artifact descriptor.
+
+- name: Require the operator-approved package identity
+  ansible.builtin.assert:
+    that:
+      - python_application_artifact.package | regex_replace('[-_.]+', '-') | lower ==
+        python_application_package | regex_replace('[-_.]+', '-') | lower
+      - python_application_artifact.sha256 == python_application_approved_sha256
+      - python_application_artifact.version == python_application_approved_version
+      - python_application_artifact.filename in python_application_compatible_wheels
+    fail_msg: The release must match the independently approved package, version, digest and target wheel compatibility.
+
+- name: Require Lightwell repository and signing identity
+  when: python_application_artifact.channel == 'lightwell'
+  ansible.builtin.assert:
+    that:
+      - python_application_artifact.url is match('^https://packages[.]redhat[.]com/')
+      - python_application_artifact.provenance_url | default('') is match('^https://packages[.]redhat[.]com/')
+      - python_application_signing_key | length > 0
+      - python_application_signing_key_sha256 is match('^[0-9a-f]{64}$')
+    fail_msg: Lightwell releases require provenance and a separately pinned trusted signing key.
+
+- name: Allocate private controller staging
+  ansible.builtin.tempfile:
+    state: directory
+    prefix: invoice-artifact-
+  delegate_to: localhost
+  become: false
+  register: python_application_stage
+  changed_when: false
+
+- name: Stage and authenticate the selected dependency
+  block:
+    - name: Download the exact wheel to the execution environment
+      ansible.builtin.get_url:
+        url: "{{ python_application_artifact.url }}"
+        dest: "{{ python_application_stage.path }}/{{ python_application_artifact.filename }}"
+        checksum: "sha256:{{ python_application_artifact.sha256 }}"
+        mode: '0600'
+        url_username: "{{ python_application_repository_username | default(omit, true) }}"
+        url_password: "{{ python_application_repository_token | default(omit, true) }}"
+        force_basic_auth: "{{ python_application_artifact.channel == 'lightwell' }}"
+        unredirected_headers: [Authorization]
+        validate_certs: true
+      delegate_to: localhost
+      become: false
+      changed_when: false
+      no_log: true
+
+    - name: Fetch Lightwell wheel provenance
+      when: python_application_artifact.channel == 'lightwell'
+      ansible.builtin.get_url:
+        url: "{{ python_application_artifact.provenance_url }}"
+        dest: "{{ python_application_stage.path }}/provenance.json"
+        mode: '0600'
+        url_username: "{{ python_application_repository_username }}"
+        url_password: "{{ python_application_repository_token }}"
+        force_basic_auth: true
+        unredirected_headers: [Authorization]
+        validate_certs: true
+      delegate_to: localhost
+      become: false
+      changed_when: false
+      no_log: true
+
+    - name: Write the public artifact contract
+      ansible.builtin.copy:
+        content: >-
+          {{ python_application_artifact | combine({
+            'approved_package': python_application_package,
+            'approved_sha256': python_application_approved_sha256,
+            'approved_version': python_application_approved_version,
+            'compatible_wheels': python_application_compatible_wheels}) | to_nice_json }}
+        dest: "{{ python_application_stage.path }}/artifact.json"
+        mode: '0600'
+      delegate_to: localhost
+      become: false
+      changed_when: false
+
+    - name: Check wheel identity and cryptographic provenance
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ role_path }}/files/verify_artifact.py"
+          - "{{ python_application_stage.path }}/artifact.json"
+          - "{{ python_application_stage.path }}/{{ python_application_artifact.filename }}"
+          - --provenance
+          - "{{ python_application_stage.path }}/provenance.json"
+          - --key
+          - "{{ python_application_signing_key | default('', true) }}"
+          - --key-sha256
+          - "{{ python_application_signing_key_sha256 | default('', true) }}"
+      delegate_to: localhost
+      become: false
+      changed_when: false
+
+    - name: Install the authenticated application release
+      ansible.builtin.include_tasks: install.yml
+  always:
+    - name: Remove controller staging and downloaded metadata
+      ansible.builtin.file:
+        path: "{{ python_application_stage.path }}"
+        state: absent
+      delegate_to: localhost
+      become: false
+      changed_when: false

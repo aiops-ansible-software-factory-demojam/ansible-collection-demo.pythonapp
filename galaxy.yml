@@ -1,0 +1,20 @@
+---
+namespace: demo
+name: pythonapp
+version: 0.1.0
+readme: README.md
+authors:
+  - Demo Maintainer
+description: Python invoice application with pinned dependency releases and RHEL EC2 remediation tests.
+license:
+  - MIT
+tags:
+  - infrastructure
+repository: https://github.com/aiops-ansible-software-factory-demojam/ansible-collection-demo.pythonapp
+build_ignore:
+  - .gitea
+  - devfile.yaml
+  - catalog-info.yaml
+  - .venv
+  - .ansible
+  - .cache

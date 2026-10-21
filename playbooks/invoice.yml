@@ -1,0 +1,75 @@
+---
+- name: Deploy the exact reviewed invoice application release
+  hosts: "{{ invoice_target_group | default('pythonapps') }}"
+  become: true
+  gather_facts: false
+  vars:
+    invoice_material: "{{ lookup('ansible.builtin.file', lookup('ansible.builtin.env', 'INVOICE_MATERIAL_FILE')) | from_json }}"
+    invoice_release_channel: baseline
+    invoice_portal_artifact: "{{ invoice_material[invoice_release_channel] }}"
+    invoice_portal_expected: >-
+      {{ 'remediated' if invoice_release_channel == 'lightwell'
+         else invoice_material.profile.validation.baseline_expectation | default('remediated') }}
+    invoice_portal_repository_username: "{{ invoice_material.repository_username | default('') }}"
+    invoice_portal_repository_token: "{{ invoice_material.repository_token | default('') }}"
+    invoice_portal_signing_key: "{{ lookup('ansible.builtin.env', 'INVOICE_SIGNING_KEY_FILE') }}"
+    invoice_portal_signing_key_sha256: "{{ invoice_material.signing_key_sha256 | default('') }}"
+  pre_tasks:
+    - name: Wait for the RHEL guest connection
+      ansible.builtin.wait_for_connection:
+        timeout: 600
+
+    - name: Gather operating system facts
+      ansible.builtin.setup:
+
+    - name: Require an exact reviewed collection commit
+      ansible.builtin.assert:
+        that:
+          - invoice_candidate_sha | default('') is match('^[0-9a-f]{40}$')
+          - invoice_release_channel in ['baseline', 'lightwell']
+
+    # AAP strips .git from its execution copy and supplies the protected
+    # awx_project_revision variable, matching the job's scm_revision field.
+    - name: Read the Git revision outside AAP
+      when: awx_job_id is not defined
+      ansible.builtin.command:
+        argv: [git, rev-parse, HEAD]
+        chdir: "{{ playbook_dir }}/.."
+      delegate_to: localhost
+      become: false
+      register: invoice_actual_revision
+      changed_when: false
+
+    - name: Select the actual execution revision
+      ansible.builtin.set_fact:
+        invoice_execution_revision: >-
+          {{ awx_project_revision | default('') if awx_job_id is defined
+             else invoice_actual_revision.stdout | trim }}
+
+    - name: Require the execution source to match the approved revision
+      ansible.builtin.assert:
+        that: invoice_execution_revision == invoice_candidate_sha
+
+    - name: Record the source revision for deployment evidence
+      ansible.builtin.set_fact:
+        invoice_portal_source_revision: "{{ invoice_execution_revision }}"
+
+    - name: Require RHEL for application deployment
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == 'RedHat'
+          - ansible_facts.distribution_major_version in ['9', '10']
+  roles:
+    - role: invoice_portal
+  tasks:
+    - name: Publish application evidence to AAP
+      ansible.builtin.set_stats:
+        aggregate: false
+        data:
+          invoice_release_evidence: "{{ invoice_portal_evidence }}"
+          invoice_collection_sha: "{{ invoice_candidate_sha }}"
+
+    - name: Publish per-host deployment evidence
+      ansible.builtin.set_stats:
+        data:
+          invoice_hosts: '{{ {inventory_hostname: invoice_portal_evidence} }}'

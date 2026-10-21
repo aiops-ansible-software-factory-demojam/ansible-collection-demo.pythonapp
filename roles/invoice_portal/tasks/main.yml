@@ -1,0 +1,45 @@
+---
+- name: Resolve the invoice application source
+  ansible.builtin.set_fact:
+    invoice_portal_application_source: '{{ role_path }}/files/app/'
+
+- name: Deploy the invoice application through the reusable Python release role
+  ansible.builtin.include_role:
+    name: python_application
+  vars:
+    python_application_root: '{{ invoice_portal_root }}'
+    python_application_service: invoice-portal
+    python_application_user: '{{ invoice_portal_user }}'
+    python_application_port: '{{ invoice_portal_port }}'
+    python_application_python: '{{ invoice_portal_python }}'
+    python_application_source: '{{ invoice_portal_application_source }}'
+    python_application_source_revision: '{{ invoice_portal_source_revision }}'
+    python_application_expected: '{{ invoice_portal_expected }}'
+    python_application_artifact: '{{ invoice_portal_artifact }}'
+    python_application_package: '{{ invoice_portal_package }}'
+    python_application_approved_sha256: '{{ invoice_portal_approved_artifact.sha256 }}'
+    python_application_approved_version: '{{ invoice_portal_approved_artifact.version }}'
+    python_application_compatible_wheels: ['{{ invoice_portal_approved_artifact.filename }}']
+    python_application_repository_username: '{{ invoice_portal_repository_username }}'
+    python_application_repository_token: '{{ invoice_portal_repository_token }}'
+    python_application_signing_key: '{{ invoice_portal_signing_key }}'
+    python_application_signing_key_sha256: '{{ invoice_portal_signing_key_sha256 }}'
+    python_application_command:
+      - '{{ invoice_portal_root }}/current/venv/bin/python'
+      - '{{ invoice_portal_root }}/current/app/portal.py'
+      - --port
+      - '{{ invoice_portal_port | string }}'
+    python_application_environment:
+      INVOICE_PROCESS_TIMEOUT: '2'
+    python_application_probe_argv:
+      - '{{ invoice_portal_python }}'
+      - '{{ invoice_portal_root }}/current/app/probe.py'
+      - 'http://127.0.0.1:{{ invoice_portal_port }}'
+      - --expect
+      - '{{ invoice_portal_expected }}'
+      - --expected-wheel-sha256
+      - '{{ invoice_portal_approved_artifact.sha256 }}'
+
+- name: Expose the invoice application release evidence
+  ansible.builtin.set_fact:
+    invoice_portal_evidence: '{{ python_application_evidence }}'
