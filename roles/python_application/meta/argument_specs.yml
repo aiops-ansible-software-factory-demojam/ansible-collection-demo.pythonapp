@@ -1,0 +1,75 @@
+---
+argument_specs:
+  main:
+    short_description: Deploy a verified Python application release from variables
+    options:
+      python_application_root:
+        type: str
+        description: Root.
+      python_application_service:
+        type: str
+        description: Service.
+      python_application_user:
+        type: str
+        description: User.
+      python_application_port:
+        type: int
+        description: Port.
+      python_application_health_path:
+        type: str
+        description: Health path.
+      python_application_python:
+        type: str
+        description: Python.
+      python_application_python_packages:
+        type: list
+        description: Python packages.
+        elements: str
+      python_application_source:
+        type: str
+        description: Source.
+      python_application_command:
+        type: list
+        description: Command.
+        elements: str
+      python_application_environment:
+        type: dict
+        description: Environment.
+      python_application_probe_argv:
+        type: list
+        description: Probe argv.
+        elements: str
+      python_application_source_revision:
+        type: str
+        description: Source revision.
+      python_application_expected:
+        type: str
+        description: Expected.
+      python_application_repository_username:
+        type: str
+        description: Repository username.
+      python_application_repository_token:
+        type: str
+        description: Repository token.
+      python_application_signing_key:
+        type: str
+        description: Signing key.
+      python_application_signing_key_sha256:
+        type: str
+        description: Signing key sha256.
+      python_application_artifact:
+        type: dict
+        description: Artifact.
+      python_application_package:
+        type: str
+        description: Package.
+      python_application_approved_sha256:
+        type: str
+        description: Approved sha256.
+      python_application_approved_version:
+        type: str
+        description: Approved version.
+      python_application_compatible_wheels:
+        type: list
+        description: Compatible wheels.
+        elements: str

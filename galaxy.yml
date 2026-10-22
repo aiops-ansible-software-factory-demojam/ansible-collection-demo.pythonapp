@@ -12,6 +12,8 @@ tags:
   - infrastructure
 repository: https://github.com/aiops-ansible-software-factory-demojam/ansible-collection-demo.pythonapp
 build_ignore:
+  - "**/__pycache__"
+  - "**/*.pyc"
   - .gitea
   - devfile.yaml
   - catalog-info.yaml

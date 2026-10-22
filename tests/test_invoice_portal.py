@@ -10,7 +10,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
-APP = ROOT / "roles/invoice_portal/files/app"
+APP = ROOT / "files/invoice"
 sys.path.insert(0, str(APP))
 from fixtures import invoice_pdf
 from probe import check, request
@@ -67,7 +67,7 @@ class InvoicePortalTests(unittest.TestCase):
 class ArtifactTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        spec = importlib.util.spec_from_file_location("verify_artifact", ROOT / "roles/invoice_portal/files/verify_artifact.py")
+        spec = importlib.util.spec_from_file_location("verify_artifact", ROOT / "roles/python_application/files/verify_artifact.py")
         cls.module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(cls.module)
 

@@ -2,6 +2,8 @@
 
 This collection owns the Python invoice vulnerability demonstration. The independent nginx/SELinux application lives in `demo.webapp` on a different RHEL host. Production playbooks target `pythonapps`; disposable tests target `molecule`.
 
+Keep application details in `vars/invoice.yml` and application files in `files/invoice`. Call `python_application` directly; do not reintroduce an application wrapper role or put application settings in inventory. Both compatibility entry points import `playbooks/deploy-invoice.yml`.
+
 Use fully qualified Ansible module names and keep roles idempotent. Keep credentials outside roles and repository files. Preserve pinned artifact trust, source identity, release locks, rollback behavior and SELinux enforcing.
 
 For an assigned issue, update `releases/invoice.json` to the exact approved Lightwell package/version/digest and add meaningful regression coverage. Reuse `playbooks/invoice-remediate.yml` and the reusable `python_application` role. Never infer CVE coverage from a signature or modify mandatory independent acceptance.

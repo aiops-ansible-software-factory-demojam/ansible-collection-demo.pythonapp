@@ -1,0 +1,44 @@
+---
+- name: Deploy and verify the selected invoice release
+  hosts: "{{ invoice_target_group | default('pythonapps') }}"
+  serial: "{{ invoice_canary_batches | default([1, '100%']) }}"
+  any_errors_fatal: true
+  become: true
+  gather_facts: false
+  vars_files:
+    - ../vars/invoice.yml
+  tasks:
+    - name: Wait for the RHEL guest connection
+      ansible.builtin.wait_for_connection:
+        timeout: 600
+    - name: Gather operating system facts
+      ansible.builtin.setup: null
+    - name: Require RHEL for application deployment
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.distribution == 'RedHat'
+          - ansible_facts.distribution_major_version in ['9', '10']
+    - name: Validate deployment source identity
+      ansible.builtin.import_tasks: tasks/validate-source.yml
+    - name: Validate the candidate dependency lock against the trusted selection
+      ansible.builtin.command:
+        argv:
+          - "{{ ansible_playbook_python }}"
+          - "{{ playbook_dir }}/../tools/check-release.py"
+          - --material
+          - "{{ lookup('ansible.builtin.env', 'INVOICE_MATERIAL_FILE') }}"
+          - --release
+          - >-
+            {{ playbook_dir }}/../{{ invoice_material.profile.application.release_manifest }}
+      changed_when: false
+      delegate_to: localhost
+      become: false
+      register: invoice_release_lock
+      when: invoice_release_channel == 'lightwell'
+      check_mode: false
+    - name: Deploy the application from its variable contract
+      ansible.builtin.import_role:
+        name: python_application
+    - name: Publish verified application evidence
+      when: not ansible_check_mode
+      ansible.builtin.import_tasks: tasks/publish-evidence.yml
