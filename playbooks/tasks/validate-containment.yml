@@ -1,0 +1,32 @@
+---
+- name: Require a native approved containment execution and exact application policy
+  ansible.builtin.assert:
+    that:
+      - awx_job_id | default(0) | int > 0
+      - awx_workflow_job_id | default(0) | int > 0
+      - awx_workflow_job_name | default('') == 'invoice_contain'
+      - invoice_response.schema_version == 1
+      - invoice_response.source_revision is match('^[0-9a-f]{40}$')
+      - awx_project_revision | default('') == invoice_response.source_revision
+      - invoice_response.route == 'contain'
+      - invoice_response.affected | bool
+      - invoice_material.profile.application.inventory_group == 'pythonapps'
+      - invoice_material.profile.application.service == python_application_service
+      - invoice_material.profile.response.containment == 'stop_service'
+      - invoice_response.profile_sha256 == (invoice_material.profile | to_json(sort_keys=true) | hash('sha256'))
+      - invoice_response.cvss_score | float >= invoice_material.profile.response.high_severity_threshold | default(7.0) | float
+      - invoice_response.hosts | sort == ansible_play_hosts_all | sort
+      - invoice_response.hosts | sort == invoice_findings.hosts | sort
+      - invoice_response.incident_key == invoice_findings.incident_key
+- name: Select the approved observation for this host
+  ansible.builtin.set_fact:
+    invoice_containment_observations: '{{ invoice_findings.observations | selectattr("host", "equalto", inventory_hostname) | list }}'
+- name: Require one explicitly affected host observation
+  ansible.builtin.assert:
+    that:
+      - invoice_containment_observations | length == 1
+      - invoice_containment_observations[0].assessment_state == 'affected'
+      - invoice_containment_observations[0].profile_sha256 == invoice_response.profile_sha256
+- name: Select this host observation
+  ansible.builtin.set_fact:
+    invoice_containment_observation: '{{ invoice_containment_observations[0] }}'
