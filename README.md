@@ -37,3 +37,9 @@ pinned vendor OSV advisory feed with the authenticated JSON package index;
 it requires an unambiguous compatible fix or an explicit approval pin.
 `playbooks/discover-lightwell.yml` prepares private material during bootstrap.
 Signature verification and mandatory independent RHEL tests remain separate.
+
+Production remediation through AAP requires an `invoice_release_contract` from
+the trusted validator and the native `invoice_promote` workflow context. Source,
+lock, target group and public material hashes are checked before guest access;
+changed shared artifact credentials fail this check. Direct disposable Molecule
+runs retain their existing release-policy checks without a production approval.

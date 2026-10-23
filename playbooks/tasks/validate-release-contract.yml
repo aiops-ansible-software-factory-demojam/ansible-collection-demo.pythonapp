@@ -1,0 +1,16 @@
+---
+- name: Require production deployment through the reusable approval workflow
+  ansible.builtin.assert:
+    that:
+      - awx_workflow_job_id | default(0) | int > 0
+      - awx_workflow_job_name | default('') == 'invoice_promote'
+      - invoice_release_contract.schema_version == 1
+      - invoice_release_contract.source_revision == invoice_candidate_sha
+      - invoice_release_contract.wheel_sha256 == invoice_material.lightwell.sha256
+      - invoice_release_contract.release_manifest_sha256 == lightwell_release_sha256
+      - invoice_target_group | default('pythonapps') == invoice_material.profile.application.inventory_group
+      - >-
+        invoice_release_contract.material_sha256 ==
+        ({'profile': invoice_material.profile, 'lightwell': invoice_material.lightwell,
+        'signing_key_sha256': invoice_material.signing_key_sha256} | to_json(sort_keys=true) | hash('sha256'))
+    fail_msg: The production source, lock or shared artifact material differs from the approved workflow contract.
