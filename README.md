@@ -43,3 +43,17 @@ the trusted validator and the native `invoice_promote` workflow context. Source,
 lock, target group and public material hashes are checked before guest access;
 changed shared artifact credentials fail this check. Direct disposable Molecule
 runs retain their existing release-policy checks without a production approval.
+
+`playbooks/contain-invoice.yml` implements the router's approved temporary
+containment path using built-in Ansible modules. Application service details remain
+in `vars/invoice.yml`; profile policy must explicitly permit `stop_service` and name
+the same service. The saved response must match the current profile, pinned AAP
+source revision, native `invoice_contain` context and complete `pythonapps` host
+scope. Each host must have one known affected observation and still run that exact
+observed dependency version before its service can be stopped and disabled.
+Service facts must confirm containment before success evidence is published.
+
+Containment causes an outage and leaves the dependency vulnerable (`fixed: false`).
+It does not modify package versions or mark an incident resolved. The trusted
+controller project owns routing and native approval verification. A later reviewed
+fixed deployment uses the existing role to enable/start and verify the service.
