@@ -1,0 +1,11 @@
+{
+  "channel": "lightwell",
+  "package": "PyPDF2",
+  "base_version": "3.0.1",
+  "version": "REPLACE_WITH_EXACT_LIGHTWELL_DISTRIBUTION_VERSION",
+  "filename": "REPLACE_WITH_EXACT_LIGHTWELL_WHEEL_FILENAME.whl",
+  "url": "https://packages.redhat.com/REPLACE_WITH_ARTIFACT_PATH",
+  "sha256": "REPLACE_WITH_64_CHARACTER_SHA256",
+  "provenance_url": "https://packages.redhat.com/REPLACE_WITH_PEP740_PROVENANCE_PATH",
+  "cves": ["CVE-2023-36464"]
+}

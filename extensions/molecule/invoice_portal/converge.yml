@@ -1,0 +1,7 @@
+---
+- name: Exercise the candidate authored workflow on disposable machines
+  ansible.builtin.import_playbook: ../../../playbooks/invoice-remediate.yml
+  vars:
+    invoice_target_group: molecule
+    invoice_candidate_sha: "{{ lookup('ansible.builtin.env', 'INVOICE_SOURCE_COMMIT') }}"
+    invoice_release_channel: lightwell

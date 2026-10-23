@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Invoice processing</title><link rel="stylesheet" href="/portal.css"><script src="/portal.js" defer></script></head>
+<body><header><span class="brand">EXAMPLE FINANCIAL SERVICES</span><span>Operations workspace</span></header>
+<main><p class="eyebrow">ACCOUNTS PAYABLE</p><h1>Invoice processing</h1><p class="intro">Extract invoice details and track processing results.</p>
+<section class="grid"><article><h2>Submit an invoice</h2><p>Process an example invoice or select your own PDF.</p><button id="sample">Process sample invoice</button><label class="upload">Choose a PDF<input id="upload" type="file" accept="application/pdf"></label><p id="progress" role="status"></p></article>
+<article><h2>Application release</h2><dl><dt>Release</dt><dd id="release">Loading</dd><dt>Dependency build</dt><dd id="version">Loading</dd><dt>Processing deadline</dt><dd id="deadline">Loading</dd></dl></article></section>
+<section><h2>Recent processing</h2><div id="jobs" aria-live="polite"><p>No invoices processed yet.</p></div></section>
+<details><summary>Security regression verification</summary><p>This synthetic document exercises CVE-2023-36464. The same processing deadline applies to every release.</p><button id="regression" class="secondary">Run regression document</button><p id="evidence"></p></details>
+</main><footer>Invoice operations · Automated with Red Hat Ansible Automation Platform</footer></body></html>

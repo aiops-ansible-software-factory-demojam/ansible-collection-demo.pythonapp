@@ -1,0 +1,16 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ansible-collection-demo.pythonapp
+  description: Python invoice vulnerability remediation with pinned Lightwell dependencies and RHEL EC2 tests.
+  annotations:
+    backstage.io/source-location: url:https://github.com/aiops-ansible-software-factory-demojam/ansible-collection-demo.pythonapp
+  links:
+    - url: https://github.com/aiops-ansible-software-factory-demojam/ansible-collection-demo.pythonapp
+      title: Forgejo repository
+      icon: scm
+spec:
+  type: ansible-collection
+  lifecycle: experimental
+  owner: user:default/demo-agent
