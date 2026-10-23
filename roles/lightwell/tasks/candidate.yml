@@ -1,0 +1,39 @@
+---
+- name: Retain non-yanked compatible wheels with complete advisory coverage
+  vars:
+    __lightwell_filename: '{{ lightwell_catalog_file.filename }}'
+    __lightwell_parts: '{{ __lightwell_filename[:-4].split("-") }}'
+    __lightwell_version: '{{ __lightwell_parts[1] | default("") }}'
+    __lightwell_coverage: '{{ __lightwell_versions[__lightwell_version] | default({}) }}'
+  ansible.builtin.set_fact:
+    lightwell_candidates: >-
+      {{ lightwell_candidates + [{'channel': 'lightwell', 'package': lightwell_material.profile.package.name,
+      'base_version': lightwell_base_version, 'version': __lightwell_version,
+      'advisory_revision': __lightwell_advisory_revision,
+      'filename': __lightwell_filename, 'url': lightwell_catalog_file.url,
+      'sha256': lightwell_catalog_file.hashes.sha256,
+      'provenance_url': lightwell_catalog_file.provenance,
+      'cves': __lightwell_advisories, 'advisories': __lightwell_coverage.advisories,
+      'advisory_mapping_available': true}] }}
+  when:
+    - not lightwell_catalog_file.yanked | default(false)
+    - __lightwell_filename is match('^[A-Za-z0-9_.+-]+\.whl$')
+    - __lightwell_parts | length in [5, 6]
+    - __lightwell_parts[0] | lower | regex_replace('[-_.]+', '-') == __lightwell_package
+    - __lightwell_filename | regex_search('-(' + (lightwell_material.profile.runtime.wheel_tags | map('regex_escape') | join('|')) + ')\.whl$')
+    - lightwell_catalog_file['requires-python'] | default('') in ([''] + lightwell_material.profile.runtime.requires_python | default([]))
+    - __lightwell_coverage.cves | default([]) | sort == __lightwell_advisories
+    - lightwell_catalog_file.hashes.sha256 | default('') is match('^[0-9a-f]{64}$')
+    - lightwell_catalog_file.provenance is defined
+    - lightwell_catalog_file.url | urlsplit('scheme') == 'https'
+    - lightwell_catalog_file.url | urlsplit('hostname') == 'packages.redhat.com'
+    - not lightwell_catalog_file.url | urlsplit('username')
+    - not lightwell_catalog_file.url | urlsplit('password')
+    - not lightwell_catalog_file.url | urlsplit('query')
+    - not lightwell_catalog_file.url | urlsplit('fragment')
+    - lightwell_catalog_file.provenance | urlsplit('scheme') == 'https'
+    - lightwell_catalog_file.provenance | urlsplit('hostname') == 'packages.redhat.com'
+    - not lightwell_catalog_file.provenance | urlsplit('username')
+    - not lightwell_catalog_file.provenance | urlsplit('password')
+    - not lightwell_catalog_file.provenance | urlsplit('query')
+    - not lightwell_catalog_file.provenance | urlsplit('fragment')

@@ -10,7 +10,7 @@
   ansible.builtin.set_stats:
     aggregate: false
     data:
-      invoice_release_manifest_sha256: "{{ (invoice_release_lock.stdout | from_json).release_sha256 }}"
+      invoice_release_manifest_sha256: "{{ lightwell_release_sha256 }}"
 - name: Publish per-host deployment evidence
   ansible.builtin.set_stats:
     data:

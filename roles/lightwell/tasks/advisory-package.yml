@@ -1,0 +1,16 @@
+---
+- name: Require a fixed-version event matching the vendor backport descriptor
+  ansible.builtin.assert:
+    that:
+      - lightwell_affected_package.database_specific.lightwell.repository_url == 'https://packages.redhat.com/lightwell/python/remediated/'
+      - lightwell_affected_package.database_specific.lightwell.remediated_version in
+        (lightwell_affected_package.ranges | map(attribute='events') | flatten | selectattr('fixed', 'defined') | map(attribute='fixed') | list)
+- name: Accumulate coverage by exact remediated version
+  vars:
+    __lightwell_version: '{{ lightwell_affected_package.database_specific.lightwell.remediated_version }}'
+    __lightwell_previous: "{{ __lightwell_versions[__lightwell_version] | default({'cves': [], 'advisories': []}) }}"
+  ansible.builtin.set_fact:
+    __lightwell_versions: >-
+      {{ __lightwell_versions | combine({__lightwell_version: {
+        'cves': (__lightwell_previous.cves + (__lightwell_record.upstream | default([]) | intersect(__lightwell_advisories))) | unique | sort,
+        'advisories': (__lightwell_previous.advisories + [__lightwell_record.id]) | unique | sort}}) }}

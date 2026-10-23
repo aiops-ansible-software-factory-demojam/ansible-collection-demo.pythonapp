@@ -29,3 +29,11 @@ python -m unittest discover -s tests -v
 ```
 
 Policy fixtures for other packages are synthetic and do not establish another successful deployed remediation. See the [invoice runbook](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/feature/separate-demo-applications/docs/invoice-lightwell-demo.md) for setup, credentials and runtime evidence.
+
+Lightwell discovery and release-policy checks use the reusable
+[`lightwell` role](roles/lightwell/README.md), built entirely from standard
+Ansible modules. Package/app/CVE policy remains input data. The role joins a
+pinned vendor OSV advisory feed with the authenticated JSON package index;
+it requires an unambiguous compatible fix or an explicit approval pin.
+`playbooks/discover-lightwell.yml` prepares private material during bootstrap.
+Signature verification and mandatory independent RHEL tests remain separate.
