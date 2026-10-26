@@ -7,7 +7,7 @@
       - awx_workflow_job_name | default('') == 'invoice_contain'
       - invoice_response.schema_version == 1
       - invoice_response.source_revision is match('^[0-9a-f]{40}$')
-      - awx_project_revision | default('') == invoice_response.source_revision
+      - (awx_job_scm_branch | default(awx_project_revision | default(''))) == invoice_response.source_revision
       - invoice_response.route == 'contain'
       - invoice_response.affected | bool
       - invoice_material.profile.application.inventory_group == 'pythonapps'
