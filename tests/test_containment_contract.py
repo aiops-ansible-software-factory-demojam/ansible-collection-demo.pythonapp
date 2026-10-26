@@ -33,10 +33,13 @@ class ContainmentContractTests(unittest.TestCase):
 
     def test_exact_approved_scope_passes(self): self.check(self.values, True)
 
+    def test_pinned_containment_source_ignores_later_default_project_revision(self):
+        self.check(dict(self.values, awx_project_revision='e' * 40, awx_job_scm_branch='d' * 40), True)
+
     def test_wrong_workflow_service_profile_hosts_or_fixed_observation_is_rejected(self):
         for field in ['workflow', 'service', 'profile', 'hosts', 'state', 'incident', 'source']:
             v = copy.deepcopy(self.values)
-            if field == 'source': v['awx_project_revision'] = 'e' * 40
+            if field == 'source': v['awx_job_scm_branch'] = 'e' * 40
             if field == 'workflow': v['awx_workflow_job_name'] = 'invoice_promote'
             if field == 'service': v['python_application_service'] = 'sshd'
             if field == 'profile': v['invoice_material']['profile']['response']['containment'] = 'manual'

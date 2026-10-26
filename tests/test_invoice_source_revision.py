@@ -55,6 +55,16 @@ class SourceRevisionTests(unittest.TestCase):
     def test_missing_aap_revision_fails(self):
         self.run_guard({"awx_job_id": 1, "invoice_candidate_sha": "a" * 40}, False)
 
+    def test_pinned_job_survives_default_project_advancing_to_a_merge_commit(self):
+        self.run_guard({"awx_job_id": 1, "awx_project_revision": "b" * 40,
+                        "awx_job_scm_branch": "a" * 40, "invoice_candidate_sha": "a" * 40}, True)
+
+    def test_wrong_or_mutable_override_cannot_fall_back_to_matching_project(self):
+        for override in ["main", "feature/issue-1", "b" * 40, ""]:
+            with self.subTest(override=override):
+                self.run_guard({"awx_job_id": 1, "awx_project_revision": "a" * 40,
+                                "awx_job_scm_branch": override, "invoice_candidate_sha": "a" * 40}, False)
+
     def git_commit(self):
         subprocess.run(["git", "init", "-q", str(self.root)], check=True)
         subprocess.run(["git", "-C", str(self.root), "-c", "user.name=Fixture",
