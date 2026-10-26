@@ -185,6 +185,11 @@ class LightwellTaskTests(unittest.TestCase):
         self.assertEqual(affected['incident_key'], hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest())
         self.assertEqual(affected['incident_key'], fixed['incident_key'])
 
+    def test_preselected_wheel_must_match_the_runtime(self):
+        selected = artifact()
+        selected['filename'] = 'pypdf2-3.0.1+rhlw.1-cp313-cp313-linux_aarch64.whl'
+        self.run_tasks('assess', material={'profile': profile(), 'lightwell': selected}, success=False)
+
     def test_release_hash_is_canonical_and_substitution_fails(self):
         a = artifact()
         release = {'schema_version': 1, 'application': 'app', 'channel': 'lightwell',
