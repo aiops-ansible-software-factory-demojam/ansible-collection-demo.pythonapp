@@ -12,7 +12,7 @@
       ansible.builtin.import_tasks: tasks/validate-source.yml
     - name: Validate the candidate dependency lock against the trusted selection
       ansible.builtin.include_role:
-        name: demo.pythonapp.lightwell
+        name: lightwell
         tasks_from: release
       vars:
         lightwell_material: '{{ invoice_material }}'
