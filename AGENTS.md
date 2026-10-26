@@ -20,3 +20,10 @@ the published tree. On failure, read trusted CI diagnostics on the PR, fix the
 cause on the same branch, rerun local checks, push a new commit and wait again.
 Never publish your own CI status, weaken checks or claim completion while CI
 is pending or failed. A passing verdict permits human review, not deployment.
+
+Use only the `ci --wait` helper for CI status. Each call waits at most 45 seconds.
+Check the exit code after every call: failure requires repair; pending requires
+another bounded wait. Do not replace it with shell polling loops, long sleeps or
+direct Forgejo status polling. Publish later commits with the same `pr` helper
+on the existing PR. Required tests must execute successfully; skipped tests,
+expected failures and removed coverage do not satisfy CI.
