@@ -20,7 +20,7 @@
     - __lightwell_filename is match('^[A-Za-z0-9_.+-]+\.whl$')
     - __lightwell_parts | length in [5, 6]
     - __lightwell_parts[0] | lower | regex_replace('[-_.]+', '-') == __lightwell_package
-    - __lightwell_filename | regex_search('-(' + (lightwell_material.profile.runtime.wheel_tags | map('regex_escape') | join('|')) + ')\.whl$')
+    - (__lightwell_filename | regex_search('-(' + (lightwell_material.profile.runtime.wheel_tags | map('regex_escape') | join('|')) + ')\.whl$')) is not none
     - lightwell_catalog_file['requires-python'] | default('') in ([''] + lightwell_material.profile.runtime.requires_python | default([]))
     - __lightwell_coverage.cves | default([]) | sort == __lightwell_advisories
     - lightwell_catalog_file.hashes.sha256 | default('') is match('^[0-9a-f]{64}$')

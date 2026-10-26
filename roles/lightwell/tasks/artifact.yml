@@ -10,8 +10,8 @@
       - lightwell_material.lightwell.filename.split('-')[1] == lightwell_material.lightwell.version
       - lightwell_material.lightwell.filename.split('-')[0] | lower | regex_replace('[-_.]+', '-') == __lightwell_package
       - >-
-        lightwell_material.lightwell.filename | regex_search('-(' +
-        (lightwell_material.profile.runtime.wheel_tags | map('regex_escape') | join('|')) + ')\.whl$')
+        (lightwell_material.lightwell.filename | regex_search('-(' +
+        (lightwell_material.profile.runtime.wheel_tags | map('regex_escape') | join('|')) + ')\.whl$')) is not none
     fail_msg: The selection must match the package, runtime, digest and complete advisory set.
 - name: Require independently approved advisory coverage for the selected version
   ansible.builtin.assert:
