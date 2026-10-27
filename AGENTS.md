@@ -11,3 +11,7 @@ For an assigned issue, update `releases/invoice.json` to the exact approved Ligh
 In the managed sandbox, source `/etc/profile.d/molecule.sh` and `/etc/profile.d/invoice.sh`. Use the mounted material, public signing key, scoped test identity, pinned RHEL 9/10 images and shared Molecule provisioner. Commit before the final machine test and export `INVOICE_SOURCE_COMMIT=$(git rev-parse HEAD)`. Run lint, collection build and `make molecule`; both RHEL versions must finish creation, convergence, idempotence, verification and destruction. After interruption, use `make destroy` in the same sandbox. Keep normal collection paths; source and collection-installation roots must differ.
 
 AAP strips .git. For an overridden checkout, require Controller's protected `awx_job_scm_branch` to be the approved full commit SHA; a branch name is insufficient. Only jobs without an override use `awx_project_revision`, which describes the default project revision. Direct runs check clean Git HEAD. Push the issue branch and open a PR, reporting actual exit codes and the published SHA. Do not merge, change production, or bypass the human review and AAP approval gates.
+
+Run the collection's complete unit suite as well as lint, build and all Molecule
+scenarios. Report actual command exit codes and distinguish completed checks from
+checks that could not run. Do not hide failures behind a successful shell pipeline.
