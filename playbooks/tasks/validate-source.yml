@@ -35,7 +35,8 @@
 - name: Select the actual execution revision
   ansible.builtin.set_fact:
     invoice_execution_revision: >-
-      {{ awx_project_revision | default('') if awx_job_id is defined else invoice_actual_revision.stdout | trim
+      {{ (awx_job_scm_branch | default(awx_project_revision | default('')))
+      if awx_job_id is defined else invoice_actual_revision.stdout | trim
       }}
 - name: Require the execution source to match the approved revision
   ansible.builtin.assert:
