@@ -5,71 +5,137 @@ argument_specs:
     options:
       python_application_root:
         type: str
-        description: Root.
+        description: Absolute release root under /opt, matching ^/opt/[a-zA-Z0-9_-]+$; defaults to /opt/python-application.
       python_application_service:
         type: str
-        description: Service.
+        description: Systemd service name containing only letters, digits, underscores and hyphens; defaults to
+          python-application.
       python_application_user:
         type: str
-        description: User.
+        description: Dedicated system account used to run the application; defaults to python-application.
       python_application_port:
         type: int
-        description: Port.
+        description: Application TCP listen port from 1 through 65535; defaults to 80.
       python_application_health_path:
         type: str
-        description: Health path.
+        description: HTTP path used for release readiness; defaults to /healthz.
       python_application_python:
         type: str
-        description: Python.
+        description: Absolute application Python interpreter path; defaults to /usr/bin/python3.12.
       python_application_python_packages:
         type: list
-        description: Python packages.
+        description: Distribution packages providing the interpreter and pip; defaults select the RHEL 9 or RHEL
+          10 runtime.
         elements: str
       python_application_source:
         type: str
-        description: Source.
+        description: Controller-local directory containing reviewed application files to copy into each immutable
+          release.
+        required: true
       python_application_command:
         type: list
-        description: Command.
+        description: Nonempty argument list for the systemd application command, using the activated release paths.
         elements: str
+        required: true
       python_application_environment:
         type: dict
-        description: Environment.
+        description: Environment variables for the managed application service; defaults to an empty mapping.
       python_application_probe_argv:
         type: list
-        description: Probe argv.
+        description: Nonempty argument list for the application-specific business and regression probe after activation.
         elements: str
+        required: true
       python_application_source_revision:
         type: str
-        description: Source revision.
+        description: Exact lowercase 40-character Git SHA identifying the reviewed application collection.
+        required: true
       python_application_expected:
         type: str
-        description: Expected.
+        description: Expected business probe result label; defaults to remediated.
       python_application_repository_username:
         type: str
-        description: Repository username.
+        description: Private repository username used only for authenticated Lightwell downloads; empty for a baseline
+          artifact.
+        no_log: true
       python_application_repository_token:
         type: str
-        description: Repository token.
+        description: Private repository access token used only for authenticated Lightwell downloads; never publish
+          this value.
+        no_log: true
       python_application_signing_key:
         type: str
-        description: Signing key.
+        description: Controller-local public signing key file; required by runtime validation for a Lightwell release.
       python_application_signing_key_sha256:
         type: str
-        description: Signing key sha256.
+        description: Operator-pinned lowercase 64-character SHA256 of the public signing key file.
       python_application_artifact:
         type: dict
-        description: Artifact.
+        description: Complete immutable wheel descriptor; identity is independently compared with the operator-approved
+          values.
+        required: true
+        options:
+          channel:
+            type: str
+            required: true
+            choices:
+              - baseline
+              - lightwell
+            description: Approved artifact origin; Lightwell additionally requires provenance and pinned signing
+              trust.
+          package:
+            type: str
+            required: true
+            description: Distribution name contained in the wheel metadata.
+          version:
+            type: str
+            required: true
+            description: Exact installed distribution version.
+          sha256:
+            type: str
+            required: true
+            description: Lowercase SHA256 of the approved wheel bytes.
+          filename:
+            type: str
+            required: true
+            description: Safe wheel basename matching an approved compatible filename.
+          url:
+            type: str
+            required: true
+            description: HTTPS wheel download URL; Lightwell URLs must use packages.redhat.com.
+          provenance_url:
+            type: str
+            description: Vendor provenance URL required for Lightwell releases.
+          base_version:
+            type: str
+            description: Upstream version receiving the vendor backport.
+          advisory_revision:
+            type: str
+            description: Pinned vendor advisory feed commit used during discovery.
+          cves:
+            type: list
+            elements: str
+            description: Approved vulnerability identifiers mapped to the selected vendor fix.
+          advisories:
+            type: list
+            elements: str
+            description: Vendor advisory identifiers establishing remediation coverage.
+          advisory_mapping_available:
+            type: bool
+            description: Whether preparation found a complete vendor-backed advisory mapping.
       python_application_package:
         type: str
-        description: Package.
+        description: Independently approved distribution name; normalization must match the artifact package.
+        required: true
       python_application_approved_sha256:
         type: str
-        description: Approved sha256.
+        description: Independently approved lowercase 64-character SHA256 of the wheel bytes.
+        required: true
       python_application_approved_version:
         type: str
-        description: Approved version.
+        description: Exact independently approved installed distribution version.
+        required: true
       python_application_compatible_wheels:
         type: list
-        description: Compatible wheels.
+        description: Approved compatible wheel filenames; the selected artifact filename must be present.
         elements: str
+        required: true

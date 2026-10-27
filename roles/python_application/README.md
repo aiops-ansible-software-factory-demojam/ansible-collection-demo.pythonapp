@@ -31,3 +31,9 @@ health and business probes before publishing successful evidence.
 Inputs are described in `meta/argument_specs.yml`. Internal release verification
 uses root-owned integrity metadata; it detects drift and is not a replacement for
 artifact signatures or protection against an attacker with root access.
+
+Role argument validation requires caller-supplied source, command, probe, revision,
+artifact and independent approval inputs before deployment. The artifact channel
+accepts only `baseline` or `lightwell`. Root, service and port retain their usable
+role defaults; runtime assertions still enforce safe paths, exact hashes, trusted
+URLs and the additional Lightwell signing requirements.

@@ -26,3 +26,27 @@ single-dependency lock and return `lightwell_release_sha256`.
 `playbooks/discover-lightwell.yml` writes prepared material to
 `lightwell_material_output` after successful discovery. It is usable during
 bootstrap without a cluster and uses the same role as AAP catalog discovery.
+
+This role uses built-in Ansible modules. Select an explicit `tasks_from` entry:
+
+| Entry | Required input | Output |
+| --- | --- | --- |
+| `discover` | `lightwell_material` and its baseline version (or `lightwell_base_version`) | `lightwell_selection`, `lightwell_candidates`, `lightwell_discovered_material` |
+| `assess` | `lightwell_material`, `lightwell_installed.package` and `.version` | `lightwell_finding` |
+| `release` | `lightwell_material`, `lightwell_release_file` | `lightwell_release_sha256` |
+
+`meta/argument_specs.yml` documents and validates each entry's input types before
+its tasks run. `inputs.yml` validates the operator profile; release and artifact
+tasks retain the exact package, advisory, source and digest checks. Repository
+credentials remain private. Discovery uses the immutable advisory revision in
+prepared material, or resolves one before a new preparation.
+
+`playbooks/deploy-invoice.yml` runs from both a collection and a raw AAP Git
+checkout. Its local role names use `ansible.cfg`'s `roles_path = ./roles` to select
+the reviewed checkout rather than an older installed collection. The discovery
+entry points use the FQCN because bootstrap and the automation project explicitly
+install the collection before discovery. Do not replace the deployment's local
+role references with FQCNs without preserving raw-checkout source selection.
+
+`lightwell_discovered_material` contains private repository material. Keep it under
+secure logging and never publish it with the public selection or finding.

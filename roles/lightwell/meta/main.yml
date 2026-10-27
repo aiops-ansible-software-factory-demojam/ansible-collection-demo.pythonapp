@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  author: Demo Maintainer
+  description: Discover and validate vendor-backed Python remediation evidence.
+  license: MIT
+  min_ansible_version: '2.16'
+  platforms:
+    - name: EL
+      versions:
+        - '9'
+        - '10'
+dependencies: []

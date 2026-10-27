@@ -1,0 +1,60 @@
+---
+argument_specs:
+  discover:
+    short_description: Discover one compatible vendor-advised remediation
+    options:
+      lightwell_material:
+        type: dict
+        required: true
+        no_log: true
+        description: Operator-prepared application profile, baseline and optional approved Lightwell selection;
+          includes private repository credentials. Policy and artifact assertions remain authoritative.
+      lightwell_base_version:
+        type: str
+        required: true
+        description: Backport base version to match in the advisory feed; defaults to the prepared baseline version.
+      lightwell_advisory_revision:
+        type: str
+        description: Immutable advisory feed commit; an empty value resolves and pins the current vendor revision.
+      lightwell_advisory_archive:
+        type: str
+        description: Archive URL for the pinned advisory revision; override only for an isolated trusted fixture.
+      lightwell_index_origin:
+        type: str
+        description: Origin of the authenticated vendor Python index; production defaults to https://packages.redhat.com.
+  assess:
+    short_description: Assess the observed version against operator advisory mappings
+    options:
+      lightwell_material:
+        type: dict
+        required: true
+        no_log: true
+        description: Operator-prepared application profile, baseline and optional approved Lightwell selection;
+          includes private repository credentials. Policy and artifact assertions remain authoritative.
+      lightwell_installed:
+        type: dict
+        required: true
+        description: Observed installed distribution identity, collected independently from the target runtime.
+        options:
+          package:
+            type: str
+            required: true
+            description: Installed distribution name; must normalize to the profile package.
+          version:
+            type: str
+            required: true
+            description: Exact installed version; unknown versions remain unclassified.
+  release:
+    short_description: Validate the candidate lock against the approved artifact
+    options:
+      lightwell_material:
+        type: dict
+        required: true
+        no_log: true
+        description: Operator-prepared application profile, baseline and optional approved Lightwell selection;
+          includes private repository credentials. Policy and artifact assertions remain authoritative.
+      lightwell_release_file:
+        type: path
+        required: true
+        description: Controller-local candidate JSON release manifest; must lock the exact approved package, version
+          and SHA256.

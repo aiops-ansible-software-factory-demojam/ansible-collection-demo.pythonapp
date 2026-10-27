@@ -1,4 +1,6 @@
 ---
+# Local role names intentionally select this reviewed checkout through ansible.cfg.
+# An AAP project is not an installed collection; FQCNs can resolve a different copy.
 - name: Deploy and verify the selected invoice release
   hosts: "{{ invoice_target_group | default('pythonapps') }}"
   serial: "{{ invoice_canary_batches | default([1, '100%']) }}"
