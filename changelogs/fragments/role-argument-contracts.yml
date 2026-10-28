@@ -1,0 +1,6 @@
+---
+minor_changes:
+  - Document and validate Lightwell discovery, assessment and release entry points through native role argument specifications.
+  - Require caller-supplied Python release inputs and validate artifact channels while retaining usable role defaults.
+bugfixes:
+  - Preserve lazy advisory archive resolution during argument validation and document local role selection for raw AAP checkouts.

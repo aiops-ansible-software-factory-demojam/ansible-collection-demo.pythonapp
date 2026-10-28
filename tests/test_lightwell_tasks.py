@@ -13,6 +13,8 @@ import tempfile
 import threading
 import unittest
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 REVISION = 'a' * 40
 
@@ -47,7 +49,7 @@ def catalog():
 
 
 class LightwellTaskTests(unittest.TestCase):
-    def run_tasks(self, operation, *, material=None, records=None, index=None, release=None, success=True, **extra):
+    def run_tasks(self, operation, *, material=None, records=None, index=None, release=None, success=True, local_release=False, **extra):
         material = copy.deepcopy(material or {'profile': profile(), 'baseline': {'version': '3.0.1'}, 'lightwell': {},
                                              'repository_username': 'fixture', 'repository_token': 'PRIVATE-FIXTURE-TOKEN'})
         records = [advisory()] if records is None else records
@@ -94,10 +96,31 @@ class LightwellTaskTests(unittest.TestCase):
                                     {'name': 'demo.pythonapp.lightwell', 'tasks_from': operation}},
                                    {'name': 'Write the public result', 'ansible.builtin.copy':
                                     {'content': '{{ ' + result_expression + ' | to_json }}', 'dest': str(temp / 'result.json'), 'mode': '0600'}}]}]
-                (temp / 'play.json').write_text(json.dumps(play))
+                run_directory = ROOT
+                if local_release:
+                    raw = temp / 'raw'
+                    (raw / 'playbooks').mkdir(parents=True)
+                    (raw / 'releases').mkdir()
+                    (raw / 'roles').symlink_to(ROOT / 'roles')
+                    (raw / 'ansible.cfg').write_text('[defaults]\nroles_path = ./roles\n')
+                    (raw / 'releases/app.json').write_text(json.dumps(release))
+                    # A conflicting installed copy must never supply deployment policy.
+                    (collection / 'pythonapp').unlink()
+                    installed = collection / 'pythonapp/roles/lightwell/tasks'
+                    installed.mkdir(parents=True)
+                    (installed / 'release.yml').write_text('- name: Reject the wrong installed policy\n  ansible.builtin.fail:\n    msg: WRONG_INSTALLED_COLLECTION\n')
+                    source = yaml.safe_load((ROOT / 'playbooks/deploy-invoice.yml').read_text())[0]
+                    task = next(copy.deepcopy(t) for t in source['tasks']
+                                if t.get('ansible.builtin.include_role', {}).get('tasks_from') == 'release')
+                    play[0]['tasks'][0] = task
+                    variables.update(invoice_material=material, invoice_release_channel='lightwell')
+                    (temp / 'vars.json').write_text(json.dumps(variables))
+                    run_directory = raw
+                play_path = (run_directory / 'playbooks/check.json') if local_release else (temp / 'play.json')
+                play_path.write_text(json.dumps(play))
                 env = {**os.environ, 'ANSIBLE_COLLECTIONS_PATH': str(temp / 'collections'), 'ANSIBLE_NOCOLOR': '1'}
-                result = subprocess.run([shutil.which('ansible-playbook'), '-i', 'localhost,', str(temp / 'play.json'),
-                                         '-e', '@' + str(temp / 'vars.json')], env=env, capture_output=True, text=True, timeout=90)
+                result = subprocess.run([shutil.which('ansible-playbook'), '-i', 'localhost,', str(play_path),
+                                         '-e', '@' + str(temp / 'vars.json')], env=env, cwd=run_directory, capture_output=True, text=True, timeout=90)
                 self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
                 self.assertNotIn('PRIVATE-FIXTURE-TOKEN', result.stdout + result.stderr)
                 return json.loads((temp / 'result.json').read_text()) if success else None
@@ -105,6 +128,13 @@ class LightwellTaskTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             worker.join()
+
+    def test_raw_aap_checkout_uses_local_release_policy_over_installed_collection(self):
+        material = {'profile': profile(), 'baseline': {'version': '3.0.1'}, 'lightwell': artifact(),
+                    'repository_token': 'PRIVATE-FIXTURE-TOKEN'}
+        release = {'schema_version': 1, 'application': 'app', 'channel': 'lightwell',
+                   'dependencies': [{'package': 'PyPDF2', 'version': '3.0.1+rhlw.1', 'sha256': 'b' * 64}]}
+        self.assertRegex(self.run_tasks('release', material=material, release=release, local_release=True), r'^[0-9a-f]{64}$')
 
     def test_discovers_fix_without_preselected_artifact_or_fixed_version_mapping(self):
         p = profile()

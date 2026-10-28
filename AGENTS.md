@@ -26,3 +26,37 @@ new run. Set the shell tool timeout to at least 1800000 ms (30 minutes) for a fu
 lifecycle; do not add a shorter shell `timeout` around Molecule. A timeout or
 incomplete output is not a pass. Run tests without output-filtering pipelines,
 or enable `set -o pipefail` and preserve the actual Molecule exit status.
+
+Keep generated collection installations outside the checkout. Never commit the
+`collections/ansible_collections/` cache or absolute/outside-checkout symlinks. Use a separate temporary
+collection installation root and preserve the sandbox's normal dependency paths.
+Before committing and submitting, inspect `git diff --cached --stat` and
+`git diff --cached --name-status`; stage only reviewed source and regression tests.
+The PR helper rejects nonportable committed content before pushing or publishing.
+Keep standard `collections/requirements.yml` dependency declarations in source.
+
+## Ansible authoring standard
+
+Follow [Red Hat CoP Automation Good Practices](https://redhat-cop.github.io/automation-good-practices/),
+especially role design, coding style, idempotence and check mode. Repository and
+operator requirements still determine application layout and acceptance boundaries.
+
+Prefer an existing built-in or maintained collection module to `command` or
+`shell`; check its interface with `ansible-doc` and declare production collection
+dependencies in `galaxy.yml` when applicable. Use `ansible.builtin.uri` for HTTP
+APIs. Avoid custom modules/plugins when existing modules and straightforward tasks
+are sufficient; document the specific unsupported capability before adding one.
+Keep application details in vars files, not role defaults or inventory.
+
+If a command is necessary, comment why no suitable module covers it, prefer
+`ansible.builtin.command` with `argv`, and provide accurate change detection,
+check-mode behavior and failure handling. Use shell only when shell features are
+required. Never suppress configuration/test errors with `|| true` or unconditional
+`failed_when: false`, and never hide mutations with blanket `changed_when: false`.
+Read-only diagnostic commands can legitimately report no change; classify expected
+nonzero results explicitly and retain unexpected failures.
+
+Keep meaningful regression assertions and the complete Molecule lifecycle,
+including idempotence and verification. Run production-profile lint and all final
+checks; preserve actual nonzero exit codes. Do not weaken tests or discard test
+state to claim success. Report failed or unavailable checks honestly.

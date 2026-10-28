@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  author: Demo Maintainer
+  description: Deploy verified immutable Python releases with rollback and business checks.
+  license: MIT
+  min_ansible_version: '2.16'
+  platforms:
+    - name: EL
+      versions:
+        - '9'
+        - '10'
+dependencies: []

@@ -1,7 +1,8 @@
 ---
 # Prepared material retains its feed snapshot; new preparation resolves vendor main.
 lightwell_advisory_revision: "{{ lightwell_material.lightwell.advisory_revision | default('') }}"
-lightwell_advisory_archive: 'https://codeload.github.com/project-lightwell/lightwell-osv/tar.gz/{{ __lightwell_advisory_revision }}'
+lightwell_advisory_archive: >-
+  https://codeload.github.com/project-lightwell/lightwell-osv/tar.gz/{{ __lightwell_advisory_revision | default(lightwell_advisory_revision) }}
 lightwell_index_origin: https://packages.redhat.com
 lightwell_material: >-
   {{ lookup('ansible.builtin.file', lookup('ansible.builtin.env', 'INVOICE_MATERIAL_FILE')) | from_json }}

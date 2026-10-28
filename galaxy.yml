@@ -20,3 +20,4 @@ build_ignore:
   - .venv
   - .ansible
   - .cache
+  - collections/ansible_collections

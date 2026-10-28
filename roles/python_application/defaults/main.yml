@@ -8,19 +8,10 @@ python_application_python: /usr/bin/python3.12
 python_application_python_packages: >-
   {{ ['python3', 'python3-pip'] if ansible_facts.distribution_major_version | default('9') == '10'
      else ['python3.12', 'python3.12-pip'] }}
-python_application_source: ''
-python_application_command: []
 python_application_environment: {}
-python_application_probe_argv: []
-python_application_source_revision: ''
 python_application_expected: remediated
 python_application_repository_username: ''
 python_application_repository_token: ''
 python_application_signing_key: ''
 python_application_signing_key_sha256: ''
-python_application_artifact: {}
-python_application_package: ''
-python_application_approved_sha256: ''
-python_application_approved_version: ''
-python_application_compatible_wheels: []
 python_application_release_id: "{{ python_application_artifact.sha256 }}-{{ python_application_source_revision }}"

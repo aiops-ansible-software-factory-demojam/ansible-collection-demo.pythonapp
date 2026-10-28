@@ -28,7 +28,7 @@ Local behavioral tests use stock PyPDF2 3.0.1 and Ansible. The release-role inte
 python -m unittest discover -s tests -v
 ```
 
-Policy fixtures for other packages are synthetic and do not establish another successful deployed remediation. See the [invoice runbook](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/feature/separate-demo-applications/docs/invoice-lightwell-demo.md) for setup, credentials and runtime evidence.
+Policy fixtures for other packages are synthetic and do not establish another successful deployed remediation. See the [invoice runbook](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/fix/portable-collection-artifacts/docs/invoice-lightwell-demo.md) for setup, credentials and runtime evidence.
 
 Lightwell discovery and release-policy checks use the reusable
 [`lightwell` role](roles/lightwell/README.md), built entirely from standard
@@ -57,3 +57,23 @@ Containment causes an outage and leaves the dependency vulnerable (`fixed: false
 It does not modify package versions or mark an incident resolved. The trusted
 controller project owns routing and native approval verification. A later reviewed
 fixed deployment uses the existing role to enable/start and verify the service.
+
+## Current acceptance and packaging
+
+The 2026-10-28 dual-application AWS rehearsal exercised these role contracts through
+baseline deployment, independent RHEL 9/10 acceptance and approved production
+promotion. The actual agent PR updated `releases/invoice.json` to the approved
+Lightwell wheel; prebuilt deployment and regression/rollback tests were reused.
+This does not turn the checked-in vulnerable baseline into a remediated release.
+The collection's 63 local behavioral/packaging tests passed on the tested source;
+local tests are distinct from machine acceptance.
+
+`collections/ansible_collections/` is generated installation content: Git ignores
+it and Galaxy excludes it. The packaging fixture includes a cache and an external
+symlink and verifies neither enters the artifact, while a normal
+`collections/requirements.yml` remains included. Keep temporary source exports
+and installed collections separate. The sandbox helper rejects nonportable
+committed content before publication.
+
+See the [tested state and source refs](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/fix/portable-collection-artifacts/docs/stable-demo-rehearsal.md)
+and [Draw.io XML diagrams](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/tree/fix/portable-collection-artifacts/docs/diagrams).
