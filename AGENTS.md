@@ -28,8 +28,9 @@ incomplete output is not a pass. Run tests without output-filtering pipelines,
 or enable `set -o pipefail` and preserve the actual Molecule exit status.
 
 Keep generated collection installations outside the checkout. Never commit the
-`collections/` cache or absolute/outside-checkout symlinks. Use a separate temporary
+`collections/ansible_collections/` cache or absolute/outside-checkout symlinks. Use a separate temporary
 collection installation root and preserve the sandbox's normal dependency paths.
 Before committing and submitting, inspect `git diff --cached --stat` and
 `git diff --cached --name-status`; stage only reviewed source and regression tests.
 The PR helper rejects nonportable committed content before pushing or publishing.
+Keep standard `collections/requirements.yml` dependency declarations in source.

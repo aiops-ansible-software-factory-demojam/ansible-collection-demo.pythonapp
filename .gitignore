@@ -5,4 +5,4 @@ __pycache__/
 .venv/
 
 # Local collection installs and generated source links are never source content.
-/collections/
+/collections/ansible_collections/

@@ -20,6 +20,7 @@ class CollectionPackagingTests(unittest.TestCase):
             cache = source / 'collections/ansible_collections/demo/generated'
             cache.mkdir(parents=True)
             (cache / 'install-state.json').write_text('{}')
+            (source / 'collections/requirements.yml').write_text('collections: []\n')
             outside = temp / 'outside-source.txt'
             outside.write_text('Must not enter a source artifact\n')
             (cache / 'source-link').symlink_to(outside)
@@ -33,7 +34,9 @@ class CollectionPackagingTests(unittest.TestCase):
             self.assertEqual(len(paths), 1)
             with tarfile.open(paths[0]) as archive:
                 names = archive.getnames()
-                self.assertFalse(any(name == 'collections' or name.startswith('collections/') for name in names), names)
+                self.assertFalse(any(name == 'collections/ansible_collections' or name.startswith('collections/ansible_collections/')
+                                     for name in names), names)
+                self.assertIn('collections/requirements.yml', names)
                 self.assertIn('README.md', names)
 
 
