@@ -23,11 +23,11 @@ python_application_command:
   - --port
   - "{{ python_application_port | string }}"
 python_application_environment:
-  INVOICE_PROCESS_TIMEOUT: '2'
+  INVOICE_PROCESS_TIMEOUT: "2"
 python_application_probe_argv:
   - "{{ python_application_python }}"
   - "{{ python_application_root }}/current/app/probe.py"
-  - "http://127.0.0.1:{{ python_application_port }}"
+  - http://127.0.0.1:{{ python_application_port }}
   - --expect
   - >-
     {{ 'remediated' if invoice_release_channel == 'lightwell' else invoice_material.profile.validation.baseline_expectation

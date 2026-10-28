@@ -7,8 +7,8 @@ argument_specs:
         type: dict
         required: true
         no_log: true
-        description: Operator-prepared application profile, baseline and optional approved Lightwell selection;
-          includes private repository credentials. Policy and artifact assertions remain authoritative.
+        description: Operator-prepared application profile, baseline and optional approved Lightwell selection; includes private repository credentials. Policy 
+          and artifact assertions remain authoritative.
       lightwell_base_version:
         type: str
         required: true
@@ -29,8 +29,8 @@ argument_specs:
         type: dict
         required: true
         no_log: true
-        description: Operator-prepared application profile, baseline and optional approved Lightwell selection;
-          includes private repository credentials. Policy and artifact assertions remain authoritative.
+        description: Operator-prepared application profile, baseline and optional approved Lightwell selection; includes private repository credentials. Policy 
+          and artifact assertions remain authoritative.
       lightwell_installed:
         type: dict
         required: true
@@ -51,10 +51,9 @@ argument_specs:
         type: dict
         required: true
         no_log: true
-        description: Operator-prepared application profile, baseline and optional approved Lightwell selection;
-          includes private repository credentials. Policy and artifact assertions remain authoritative.
+        description: Operator-prepared application profile, baseline and optional approved Lightwell selection; includes private repository credentials. Policy 
+          and artifact assertions remain authoritative.
       lightwell_release_file:
         type: path
         required: true
-        description: Controller-local candidate JSON release manifest; must lock the exact approved package, version
-          and SHA256.
+        description: Controller-local candidate JSON release manifest; must lock the exact approved package, version and SHA256.

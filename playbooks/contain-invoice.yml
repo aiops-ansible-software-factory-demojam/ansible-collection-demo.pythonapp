@@ -9,38 +9,44 @@
   tasks:
     - name: Check containment scope and saved policy before guest access
       ansible.builtin.import_tasks: tasks/validate-containment.yml
+
     - name: Inspect the current dependency before changing service state
       ansible.builtin.command:
         argv:
-          - '{{ invoice_material.profile.application.python_executable }}'
+          - "{{ invoice_material.profile.application.python_executable }}"
           - -c
           - import importlib.metadata,json,sys; print(json.dumps({'package':sys.argv[1],'version':importlib.metadata.version(sys.argv[1])}))
-          - '{{ invoice_material.profile.package.name }}'
-      register: invoice_containment_installed
+          - "{{ invoice_material.profile.package.name }}"
       changed_when: false
+      register: invoice_containment_installed
       check_mode: false
+
     - name: Require the dependency still matches this approved vulnerable observation
       ansible.builtin.assert:
         that:
           - (invoice_containment_installed.stdout | from_json).version == invoice_containment_observation.installed_version
+
     - name: Stop and disable the approved application service
       ansible.builtin.systemd_service:
-        name: '{{ python_application_service }}'
+        name: "{{ python_application_service }}"
         state: stopped
         enabled: false
+
     - name: Observe actual containment state
       ansible.builtin.service_facts:
-      when: not ansible_check_mode
+      when: not (ansible_check_mode | bool)
+
     - name: Require verified inactive and disabled application service
-      when: not ansible_check_mode
       ansible.builtin.assert:
         that:
           - ansible_facts.services[python_application_service ~ '.service'].state == 'stopped'
           - ansible_facts.services[python_application_service ~ '.service'].status == 'disabled'
+      when: not (ansible_check_mode | bool)
+
     - name: Publish verified temporary containment without marking the CVE fixed
-      when: not ansible_check_mode
       ansible.builtin.set_stats:
         data:
           invoice_containment_hosts: >-
             {{ {inventory_hostname: {'contained': true, 'fixed': false, 'service': python_application_service,
             'incident_key': invoice_response.incident_key}} }}
+      when: not ansible_check_mode

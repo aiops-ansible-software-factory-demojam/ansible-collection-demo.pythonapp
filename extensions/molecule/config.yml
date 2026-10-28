@@ -5,7 +5,6 @@ dependency:
   options:
     role-file: extensions/molecule/requirements-test.yml
     requirements-file: extensions/molecule/requirements-test.yml
-
 ansible:
   cfg:
     defaults:
@@ -22,7 +21,6 @@ ansible:
     prepare: ../utils/playbooks/prepare.yml
     converge: converge.yml
     verify: verify.yml
-
 scenario:
   # Every separate provisioning command starts from new, owned test guests.
   # Idempotence remains a second converge inside the same fresh test lifecycle.
@@ -55,6 +53,5 @@ scenario:
     - idempotence
     - verify
     - destroy
-
 verifier:
   name: ansible

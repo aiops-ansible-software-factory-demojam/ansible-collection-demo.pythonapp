@@ -4,21 +4,22 @@
     that:
       - invoice_candidate_sha | default('') is match('^[0-9a-f]{40}$')
       - invoice_release_channel in ['baseline', 'lightwell']
+
 - name: Read the Git revision outside AAP
-  when: awx_job_id is not defined
   ansible.builtin.command:
     argv:
       - git
       - rev-parse
       - HEAD
     chdir: "{{ playbook_dir }}/.."
-  delegate_to: localhost
-  become: false
-  register: invoice_actual_revision
-  changed_when: false
-  check_mode: false
-- name: Reject modified or untracked deployment source
   when: awx_job_id is not defined
+  changed_when: false
+  register: invoice_actual_revision
+  become: false
+  delegate_to: localhost
+  check_mode: false
+
+- name: Reject modified or untracked deployment source
   ansible.builtin.command:
     argv:
       - git
@@ -26,18 +27,21 @@
       - --porcelain
       - --untracked-files=all
     chdir: "{{ playbook_dir }}/.."
-  delegate_to: localhost
-  become: false
-  check_mode: false
-  register: invoice_source_status
+  when: awx_job_id is not defined
   changed_when: false
   failed_when: invoice_source_status.stdout | trim | length > 0
+  register: invoice_source_status
+  become: false
+  delegate_to: localhost
+  check_mode: false
+
 - name: Select the actual execution revision
   ansible.builtin.set_fact:
     invoice_execution_revision: >-
       {{ (awx_job_scm_branch | default(awx_project_revision | default('')))
       if awx_job_id is defined else invoice_actual_revision.stdout | trim
       }}
+
 - name: Require the execution source to match the approved revision
   ansible.builtin.assert:
     that: invoice_execution_revision == invoice_candidate_sha

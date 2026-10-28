@@ -18,15 +18,18 @@
       - invoice_response.hosts | sort == ansible_play_hosts_all | sort
       - invoice_response.hosts | sort == invoice_findings.hosts | sort
       - invoice_response.incident_key == invoice_findings.incident_key
+
 - name: Select the approved observation for this host
   ansible.builtin.set_fact:
     invoice_containment_observations: '{{ invoice_findings.observations | selectattr("host", "equalto", inventory_hostname) | list }}'
+
 - name: Require one explicitly affected host observation
   ansible.builtin.assert:
     that:
       - invoice_containment_observations | length == 1
       - invoice_containment_observations[0].assessment_state == 'affected'
       - invoice_containment_observations[0].profile_sha256 == invoice_response.profile_sha256
+
 - name: Select this host observation
   ansible.builtin.set_fact:
-    invoice_containment_observation: '{{ invoice_containment_observations[0] }}'
+    invoice_containment_observation: "{{ invoice_containment_observations[0] }}"

@@ -6,4 +6,4 @@ lightwell_advisory_archive: >-
 lightwell_index_origin: https://packages.redhat.com
 lightwell_material: >-
   {{ lookup('ansible.builtin.file', lookup('ansible.builtin.env', 'INVOICE_MATERIAL_FILE')) | from_json }}
-lightwell_base_version: '{{ lightwell_material.baseline.version }}'
+lightwell_base_version: "{{ lightwell_material.baseline.version }}"

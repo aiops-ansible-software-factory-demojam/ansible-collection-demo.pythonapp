@@ -10,8 +10,8 @@ python_application_python_packages: >-
      else ['python3.12', 'python3.12-pip'] }}
 python_application_environment: {}
 python_application_expected: remediated
-python_application_repository_username: ''
-python_application_repository_token: ''
-python_application_signing_key: ''
-python_application_signing_key_sha256: ''
+python_application_repository_username: ""
+python_application_repository_token: ""
+python_application_signing_key: ""
+python_application_signing_key_sha256: ""
 python_application_release_id: "{{ python_application_artifact.sha256 }}-{{ python_application_source_revision }}"

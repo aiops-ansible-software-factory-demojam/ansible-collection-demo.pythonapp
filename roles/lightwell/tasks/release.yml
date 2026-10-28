@@ -1,11 +1,14 @@
 ---
 - name: Validate release policy inputs
   ansible.builtin.import_tasks: inputs.yml
+
 - name: Validate the trusted Lightwell selection
   ansible.builtin.import_tasks: artifact.yml
+
 - name: Read the candidate release lock
   ansible.builtin.set_fact:
     __lightwell_release: "{{ lookup('ansible.builtin.file', lightwell_release_file) | from_json }}"
+
 - name: Require one explicitly locked dependency
   ansible.builtin.assert:
     that:
@@ -14,12 +17,14 @@
       - __lightwell_release.channel == 'lightwell'
       - __lightwell_release.dependencies | length == 1
     fail_msg: The release must select this application and one self-contained Lightwell wheel.
+
 - name: Require the exact approved package version and bytes
   ansible.builtin.assert:
     that:
       - __lightwell_release.dependencies[0].package | lower | regex_replace('[-_.]+', '-') == __lightwell_package
       - __lightwell_release.dependencies[0].version == lightwell_material.lightwell.version
       - __lightwell_release.dependencies[0].sha256 == lightwell_material.lightwell.sha256
+
 - name: Compute the canonical release manifest identity
   ansible.builtin.set_fact:
     lightwell_release_sha256: "{{ __lightwell_release | to_json(sort_keys=true, separators=[',', ':']) | hash('sha256') }}"

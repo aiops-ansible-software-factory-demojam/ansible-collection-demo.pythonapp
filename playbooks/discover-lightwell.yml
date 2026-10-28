@@ -8,9 +8,10 @@
       ansible.builtin.import_role:
         name: demo.pythonapp.lightwell
         tasks_from: discover
+
     - name: Write prepared material only after successful discovery
       ansible.builtin.copy:
-        content: '{{ lightwell_discovered_material | to_nice_json }}'
-        dest: '{{ lightwell_material_output }}'
-        mode: '0600'
+        content: "{{ lightwell_discovered_material | to_nice_json }}"
+        dest: "{{ lightwell_material_output }}"
+        mode: "0600"
       no_log: true

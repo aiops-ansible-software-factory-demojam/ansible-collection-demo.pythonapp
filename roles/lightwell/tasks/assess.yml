@@ -1,31 +1,37 @@
 ---
 - name: Validate assessment inputs
   ansible.builtin.import_tasks: inputs.yml
+
 - name: Validate an available Lightwell selection
   ansible.builtin.include_tasks: artifact.yml
   when: lightwell_material.lightwell | default({}) | length > 0
+
 - name: Require the observed package to match the configured application
   ansible.builtin.assert:
     that:
       - lightwell_installed.package | lower | regex_replace('[-_.]+', '-') == __lightwell_package
+
 - name: Initialize version assessment
   ansible.builtin.set_fact:
     __lightwell_affected: []
     __lightwell_fixed: true
+
 - name: Assess each explicit advisory mapping
   ansible.builtin.set_fact:
-    __lightwell_affected: '{{ __lightwell_affected + ([item.id] if lightwell_installed.version in item.affected_versions else []) }}'
-    __lightwell_fixed: '{{ __lightwell_fixed and lightwell_installed.version in item.fixed_versions | default([]) }}'
-  loop: '{{ lightwell_material.profile.advisories }}'
+    __lightwell_affected: "{{ __lightwell_affected + ([item.id] if lightwell_installed.version in item.affected_versions else []) }}"
+    __lightwell_fixed: "{{ __lightwell_fixed and lightwell_installed.version in item.fixed_versions | default([]) }}"
+  loop: "{{ lightwell_material.profile.advisories }}"
   loop_control:
-    label: '{{ item.id }}'
+    label: "{{ item.id }}"
+
 - name: Preserve the incident identity across vulnerable and fixed observations
   ansible.builtin.set_fact:
     __lightwell_identity:
-      application: '{{ lightwell_material.profile.application.id }}'
-      environment: '{{ lightwell_material.profile.environment }}'
-      package: '{{ __lightwell_package }}'
-      advisories: '{{ __lightwell_advisories }}'
+      application: "{{ lightwell_material.profile.application.id }}"
+      environment: "{{ lightwell_material.profile.environment }}"
+      package: "{{ __lightwell_package }}"
+      advisories: "{{ __lightwell_advisories }}"
+
 - name: Return the public finding without repository access material
   ansible.builtin.set_fact:
     lightwell_finding: >-

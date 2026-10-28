@@ -19,6 +19,6 @@
 
     - name: Require SELinux enforcing after deployment
       ansible.builtin.command: getenforce
-      register: invoice_selinux
       changed_when: false
       failed_when: invoice_selinux.stdout | trim != 'Enforcing'
+      register: invoice_selinux

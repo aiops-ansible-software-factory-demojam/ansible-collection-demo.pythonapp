@@ -8,8 +8,7 @@ argument_specs:
         description: Absolute release root under /opt, matching ^/opt/[a-zA-Z0-9_-]+$; defaults to /opt/python-application.
       python_application_service:
         type: str
-        description: Systemd service name containing only letters, digits, underscores and hyphens; defaults to
-          python-application.
+        description: Systemd service name containing only letters, digits, underscores and hyphens; defaults to python-application.
       python_application_user:
         type: str
         description: Dedicated system account used to run the application; defaults to python-application.
@@ -24,13 +23,11 @@ argument_specs:
         description: Absolute application Python interpreter path; defaults to /usr/bin/python3.12.
       python_application_python_packages:
         type: list
-        description: Distribution packages providing the interpreter and pip; defaults select the RHEL 9 or RHEL
-          10 runtime.
+        description: Distribution packages providing the interpreter and pip; defaults select the RHEL 9 or RHEL 10 runtime.
         elements: str
       python_application_source:
         type: str
-        description: Controller-local directory containing reviewed application files to copy into each immutable
-          release.
+        description: Controller-local directory containing reviewed application files to copy into each immutable release.
         required: true
       python_application_command:
         type: list
@@ -54,13 +51,11 @@ argument_specs:
         description: Expected business probe result label; defaults to remediated.
       python_application_repository_username:
         type: str
-        description: Private repository username used only for authenticated Lightwell downloads; empty for a baseline
-          artifact.
+        description: Private repository username used only for authenticated Lightwell downloads; empty for a baseline artifact.
         no_log: true
       python_application_repository_token:
         type: str
-        description: Private repository access token used only for authenticated Lightwell downloads; never publish
-          this value.
+        description: Private repository access token used only for authenticated Lightwell downloads; never publish this value.
         no_log: true
       python_application_signing_key:
         type: str
@@ -70,8 +65,7 @@ argument_specs:
         description: Operator-pinned lowercase 64-character SHA256 of the public signing key file.
       python_application_artifact:
         type: dict
-        description: Complete immutable wheel descriptor; identity is independently compared with the operator-approved
-          values.
+        description: Complete immutable wheel descriptor; identity is independently compared with the operator-approved values.
         required: true
         options:
           channel:
@@ -80,8 +74,7 @@ argument_specs:
             choices:
               - baseline
               - lightwell
-            description: Approved artifact origin; Lightwell additionally requires provenance and pinned signing
-              trust.
+            description: Approved artifact origin; Lightwell additionally requires provenance and pinned signing trust.
           package:
             type: str
             required: true

@@ -5,15 +5,17 @@
     state: directory
     owner: root
     group: root
-    mode: '0755'
+    mode: "0755"
+
 - name: Reserve the new release directory exclusively
   ansible.builtin.command:
     argv:
       - mkdir
       - -m
-      - '0755'
+      - "0755"
       - "{{ python_application_root }}/releases/{{ python_application_release_id }}"
   changed_when: true
+
 - name: Prepare a new release without modifying existing releases
   block:
     - name: Copy application source from the reviewed collection
@@ -22,25 +24,26 @@
         dest: "{{ python_application_root }}/releases/{{ python_application_release_id }}/app/"
         owner: root
         group: root
-        mode: '0644'
-        directory_mode: '0755'
+        mode: "0644"
+        directory_mode: "0755"
+
     - name: Copy only the authenticated wheel to the guest
       ansible.builtin.copy:
         src: "{{ python_application_stage.path }}/{{ python_application_artifact.filename }}"
         dest: >-
-          {{ python_application_root }}/releases/{{ python_application_release_id }}/{{ python_application_artifact.filename
-          }}
+          {{ python_application_root }}/releases/{{ python_application_release_id }}/{{ python_application_artifact.filename }}
         owner: root
         group: root
-        mode: '0644'
+        mode: "0644"
+
     - name: Install the dependency offline into the release environment
       ansible.builtin.pip:
         name: >-
-          {{ python_application_root }}/releases/{{ python_application_release_id }}/{{ python_application_artifact.filename
-          }}
+          {{ python_application_root }}/releases/{{ python_application_release_id }}/{{ python_application_artifact.filename }}
         virtualenv: "{{ python_application_root }}/releases/{{ python_application_release_id }}/venv"
         virtualenv_command: "{{ python_application_python }} -m venv"
         extra_args: --no-index --no-deps
+
     - name: Record release evidence
       ansible.builtin.copy:
         content: >-
@@ -52,7 +55,8 @@
           {{ python_application_root }}/releases/{{ python_application_release_id }}/app/release.json
         owner: root
         group: root
-        mode: '0644'
+        mode: "0644"
+
     - name: Seal the complete release contents
       ansible.builtin.script:
         cmd: >-
@@ -64,6 +68,8 @@
       ansible.builtin.file:
         path: "{{ python_application_root }}/releases/{{ python_application_release_id }}"
         state: absent
+        mode: "0644"
+
     - name: Stop after release preparation failure
       ansible.builtin.fail:
         msg: Release preparation failed; the active release was not changed.

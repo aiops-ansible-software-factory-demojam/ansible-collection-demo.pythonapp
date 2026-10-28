@@ -1,9 +1,11 @@
 ---
 - name: Validate Lightwell discovery policy
   ansible.builtin.import_tasks: inputs.yml
+
 - name: Initialize this discovery's advisory snapshot
   ansible.builtin.set_fact:
-    __lightwell_advisory_revision: '{{ lightwell_advisory_revision }}'
+    __lightwell_advisory_revision: "{{ lightwell_advisory_revision }}"
+
 - name: Resolve the current vendor advisory feed for new preparation
   ansible.builtin.uri:
     url: https://api.github.com/repos/project-lightwell/lightwell-osv/commits/main
@@ -11,63 +13,73 @@
     validate_certs: true
     follow_redirects: none
     timeout: 30
-  register: __lightwell_feed_head
   when: __lightwell_advisory_revision | length == 0
+  register: __lightwell_feed_head
   check_mode: false
+
 - name: Pin the resolved feed before downloading it
   ansible.builtin.set_fact:
-    __lightwell_advisory_revision: '{{ __lightwell_feed_head.json.sha }}'
+    __lightwell_advisory_revision: "{{ __lightwell_feed_head.json.sha }}"
   when: __lightwell_advisory_revision | length == 0
+
 - name: Require an immutable advisory feed revision
   ansible.builtin.assert:
     that:
       - __lightwell_advisory_revision is match('^[0-9a-f]{40}$')
       - lightwell_base_version | length > 0
+
 - name: Allocate disposable advisory workspace
   ansible.builtin.tempfile:
     state: directory
     suffix: -lightwell
   register: __lightwell_workspace
   check_mode: false
+
 - name: Discover compatible fixes from vendor advisories and the package index
   block:
     - name: Download the pinned public Lightwell advisory feed
       ansible.builtin.uri:
-        url: '{{ lightwell_advisory_archive }}'
-        dest: '{{ __lightwell_workspace.path }}/advisories.tar.gz'
+        url: "{{ lightwell_advisory_archive }}"
+        dest: "{{ __lightwell_workspace.path }}/advisories.tar.gz"
         validate_certs: true
         follow_redirects: none
         timeout: 60
       check_mode: false
+
     - name: Extract the public advisory records
       ansible.builtin.unarchive:
-        src: '{{ __lightwell_workspace.path }}/advisories.tar.gz'
-        dest: '{{ __lightwell_workspace.path }}'
+        src: "{{ __lightwell_workspace.path }}/advisories.tar.gz"
+        dest: "{{ __lightwell_workspace.path }}"
         remote_src: true
+        mode: "0644"
       check_mode: false
+
     - name: Locate JSON records mentioning this package
       ansible.builtin.find:
-        paths: '{{ __lightwell_workspace.path }}/lightwell-osv-{{ __lightwell_advisory_revision }}/advisories'
-        patterns: '*.json'
-        contains: '{{ __lightwell_package | regex_escape }}'
+        paths: "{{ __lightwell_workspace.path }}/lightwell-osv-{{ __lightwell_advisory_revision }}/advisories"
+        patterns: "*.json"
+        contains: "{{ __lightwell_package | regex_escape }}"
         read_whole_file: true
       register: __lightwell_records
+
     - name: Initialize discovered version evidence
       ansible.builtin.set_fact:
         __lightwell_versions: {}
         lightwell_candidates: []
         lightwell_selection: {}
+
     - name: Read matching advisory records
       ansible.builtin.include_tasks: advisory.yml
-      loop: '{{ __lightwell_records.files }}'
+      loop: "{{ __lightwell_records.files }}"
       loop_control:
         loop_var: lightwell_advisory_file
-        label: '{{ lightwell_advisory_file.path | basename }}'
+        label: "{{ lightwell_advisory_file.path | basename }}"
+
     - name: Read the authenticated JSON package index
       ansible.builtin.uri:
-        url: '{{ lightwell_index_origin }}/lightwell/python/remediated/simple/{{ __lightwell_package }}/'
-        url_username: '{{ lightwell_material.repository_username }}'
-        url_password: '{{ lightwell_material.repository_token }}'
+        url: "{{ lightwell_index_origin }}/lightwell/python/remediated/simple/{{ __lightwell_package }}/"
+        url_username: "{{ lightwell_material.repository_username }}"
+        url_password: "{{ lightwell_material.repository_token }}"
         force_basic_auth: true
         follow_redirects: none
         validate_certs: true
@@ -79,6 +91,7 @@
       register: __lightwell_index
       no_log: true
       check_mode: false
+
     - name: Require the structured index format when the package exists
       ansible.builtin.assert:
         that:
@@ -87,12 +100,14 @@
           - __lightwell_index.json.name | lower | regex_replace('[-_.]+', '-') == __lightwell_package
       when: __lightwell_index.status == 200
       no_log: true
+
     - name: Check each catalog file against vendor remediation evidence
       ansible.builtin.include_tasks: candidate.yml
-      loop: '{{ __lightwell_index.json.files | default([]) }}'
+      loop: "{{ __lightwell_index.json.files | default([]) }}"
       loop_control:
         loop_var: lightwell_catalog_file
-        label: '{{ lightwell_catalog_file.filename }}'
+        label: "{{ lightwell_catalog_file.filename }}"
+
     - name: Apply an optional operator artifact approval pin
       ansible.builtin.set_fact:
         __lightwell_eligible: >-
@@ -100,31 +115,37 @@
              selectattr('sha256', 'equalto', lightwell_material.lightwell.sha256) |
              selectattr('filename', 'equalto', lightwell_material.lightwell.filename) | list
              if lightwell_material.lightwell | default({}) | length > 0 else lightwell_candidates }}
+
     - name: Refuse an approval pin that is absent from vendor-backed discovery
       ansible.builtin.assert:
         that: __lightwell_eligible | length == 1
         fail_msg: The approval pin does not match one compatible vendor-advised artifact.
       when: lightwell_material.lightwell | default({}) | length > 0
+
     - name: Refuse ambiguous remediation rather than automatically choosing latest
       ansible.builtin.assert:
         that: __lightwell_eligible | length <= 1
         fail_msg: Multiple remediations are eligible; supply an explicit operator artifact pin.
+
     - name: Select the single compatible fully covered remediation
       ansible.builtin.set_fact:
-        lightwell_selection: '{{ __lightwell_eligible | first }}'
+        lightwell_selection: "{{ __lightwell_eligible | first }}"
       when: __lightwell_eligible | length == 1
+
     - name: Record vendor-backed fixed versions in the prepared policy
       ansible.builtin.set_fact:
         __lightwell_profile_advisories: []
+
     - name: Bind each advisory to the discovered selected version
       ansible.builtin.set_fact:
         __lightwell_profile_advisories: >-
           {{ __lightwell_profile_advisories + [item | combine({
              'fixed_versions': [lightwell_selection.version] if lightwell_selection else [],
              'fix_evidence': 'Lightwell OSV feed at ' + __lightwell_advisory_revision})] }}
-      loop: '{{ lightwell_material.profile.advisories }}'
+      loop: "{{ lightwell_material.profile.advisories }}"
       loop_control:
-        label: '{{ item.id }}'
+        label: "{{ item.id }}"
+
     - name: Return prepared material without changing the independent signing trust
       ansible.builtin.set_fact:
         lightwell_discovered_material: >-
@@ -134,6 +155,7 @@
   always:
     - name: Remove the advisory workspace
       ansible.builtin.file:
-        path: '{{ __lightwell_workspace.path }}'
+        path: "{{ __lightwell_workspace.path }}"
         state: absent
+        mode: "0644"
       check_mode: false

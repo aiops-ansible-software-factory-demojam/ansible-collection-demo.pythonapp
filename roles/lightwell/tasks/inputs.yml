@@ -10,15 +10,18 @@
       - lightwell_material.profile.runtime.wheel_tags | length > 0
       - lightwell_material.profile.validation.scenario | length > 0
       - lightwell_material.profile.validation.business_checks | length > 0
+
 - name: Validate each vulnerability mapping
   ansible.builtin.assert:
     that:
-      - item.id | length > 0
-      - item.source | length > 0
-      - item.affected_versions | length > 0
-  loop: '{{ lightwell_material.profile.advisories }}'
+      - item_advisory['id'] | length > 0
+      - item_advisory['source'] | length > 0
+      - item_advisory['affected_versions'] | length > 0
+  loop: "{{ lightwell_material.profile.advisories }}"
   loop_control:
-    label: '{{ item.id }}'
+    loop_var: item_advisory
+    label: "{{ item_advisory['id'] }}"
+
 - name: Normalize package identity and required advisories
   ansible.builtin.set_fact:
     __lightwell_package: "{{ lightwell_material.profile.package.name | lower | regex_replace('[-_.]+', '-') }}"

@@ -4,25 +4,28 @@
     cmd: >-
       seal_release.py verify {{ python_application_root }}/releases/{{ python_application_release_id }}
     executable: "{{ python_application_python }}"
-  check_mode: false
   changed_when: false
+  check_mode: false
+
 - name: Check existing application files against the reviewed source
   ansible.builtin.copy:
     src: "{{ python_application_source }}"
     dest: "{{ python_application_root }}/releases/{{ python_application_release_id }}/app/"
     owner: root
     group: root
-    mode: '0644'
-    directory_mode: '0755'
+    mode: "0644"
+    directory_mode: "0755"
+  failed_when: __python_application_source_comparison.changed
+  register: __python_application_source_comparison
   check_mode: true
   diff: false
-  register: __python_application_source_comparison
-  failed_when: __python_application_source_comparison.changed
+
 - name: Read the sealed release identity
   ansible.builtin.slurp:
     src: >-
       {{ python_application_root }}/releases/{{ python_application_release_id }}/app/release.json
   register: __python_application_release_identity
+
 - name: Require the existing release to match the selected artifact and source
   ansible.builtin.assert:
     that:
