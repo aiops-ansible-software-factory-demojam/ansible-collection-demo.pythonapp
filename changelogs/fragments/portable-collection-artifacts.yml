@@ -1,0 +1,3 @@
+---
+bugfixes:
+  - Exclude generated collection caches from Git and collection artifacts so local installation links cannot enter a remediation release.
