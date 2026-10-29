@@ -9,7 +9,7 @@ import unittest
 
 import yaml
 
-from test_lightwell_tasks import profile, artifact
+from test_lightwell_tasks import profile, artifact, bootstrap_material
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -84,6 +84,23 @@ class RoleArgumentTests(unittest.TestCase):
         self.validate('lightwell', 'assess', common, False)
         self.validate('lightwell', 'assess', dict(common, lightwell_installed={'package': 'fixture'}), False)
         self.validate('lightwell', 'release', common, False)
+
+    def test_public_entries_accept_complete_bootstrap_and_discovered_material(self):
+        for entry in ['prepare', 'discover', 'assess', 'release']:
+            with self.subTest(entry=entry):
+                material = bootstrap_material()
+                material['repository_token'] = 'PRIVATE-ROLE-TOKEN'
+                self.validate('lightwell', entry, {'lightwell_material': material,
+                    'lightwell_installed': {'package': 'PyPDF2', 'version': '3.0.1'},
+                    'lightwell_release_file': '/fixture/release.json',
+                    'lightwell_material_output': '/fixture/prepared.json'})
+
+    def test_complete_material_still_rejects_misspelled_application_fields(self):
+        material = bootstrap_material()
+        material['repository_token'] = 'PRIVATE-ROLE-TOKEN'
+        material['profile']['application']['inventry_group'] = 'pythonapps'
+        self.validate('lightwell', 'prepare', {'lightwell_material': material,
+            'lightwell_material_output': '/fixture/prepared.json'}, False)
 
 
     def test_nested_policy_is_validated_at_every_public_entry(self):

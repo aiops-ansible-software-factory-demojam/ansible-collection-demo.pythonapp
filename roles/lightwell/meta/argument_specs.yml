@@ -61,6 +61,21 @@ argument_specs:
                   release_manifest:
                     description: Relative release manifest path.
                     type: str
+                  inventory_group:
+                    description: Production inventory group for this application.
+                    type: str
+                  repository:
+                    description: Application collection repository associated with the incident.
+                    type: str
+                  python_executable:
+                    description: Installed application Python interpreter used for dependency observations.
+                    type: path
+                  status_path:
+                    description: Application dependency status endpoint path.
+                    type: str
+                  service:
+                    description: Application service managed by deployment and approved containment.
+                    type: str
               environment:
                 description: Environment associated with the incident.
                 type: str
@@ -88,6 +103,9 @@ argument_specs:
                     description: Approved requires-python metadata.
                     type: list
                     elements: str
+                  python:
+                    description: Approved Python runtime version.
+                    type: str
               validation:
                 description: Acceptance contract.
                 type: dict
@@ -102,6 +120,31 @@ argument_specs:
                     type: list
                     required: true
                     elements: dict
+                  adapter:
+                    description: Application-specific acceptance adapter.
+                    type: str
+                  baseline_expectation:
+                    description: Expected vulnerability behavior of the production baseline.
+                    type: str
+                  regression:
+                    description: Shared vulnerability regression request and expected application outcomes.
+                    type: dict
+                    options:
+                      path:
+                        description: Regression request endpoint path.
+                        type: str
+                      method:
+                        description: Regression HTTP request method.
+                        type: str
+                      vulnerable_status:
+                        description: Expected result before remediation.
+                        type: str
+                      remediated_status:
+                        description: Expected result after remediation.
+                        type: str
+                      text_contains:
+                        description: Expected business content after successful processing.
+                        type: str
               advisories:
                 description: Explicit vulnerability mappings.
                 type: list
@@ -125,14 +168,55 @@ argument_specs:
                     description: Vendor-backed fixed versions.
                     type: list
                     elements: str
+                  cvss_score:
+                    description: Approved severity score used by response routing.
+                    type: float
+                  fix_evidence:
+                    description: Source of the approved or vendor-discovered remediation mapping.
+                    type: str
+              response:
+                description: Operator-approved vulnerability response and review policy.
+                type: dict
+                options:
+                  high_severity_threshold:
+                    description: Severity threshold used by response routing.
+                    type: float
+                  containment:
+                    description: Approved temporary containment action.
+                    type: str
+                  review_in_days:
+                    description: Days until a deferred finding requires review.
+                    type: int
           baseline:
             description: Baseline dependency identity.
             type: dict
-            options:
+            options: &id002
               version:
                 description: Baseline upstream version.
                 type: str
                 required: true
+              channel:
+                description: Origin of the deliberately vulnerable baseline artifact.
+                type: str
+              package:
+                description: Baseline distribution name.
+                type: str
+              base_version:
+                description: Upstream baseline version receiving a vendor backport.
+                type: str
+              filename:
+                description: Pinned baseline wheel filename.
+                type: str
+              url:
+                description: Pinned baseline wheel download URL.
+                type: str
+              sha256:
+                description: Approved baseline wheel SHA256 digest.
+                type: str
+              cves:
+                description: Vulnerabilities associated with the baseline.
+                type: list
+                elements: str
           repository_username:
             description: Private package-index username.
             type: str
@@ -144,7 +228,7 @@ argument_specs:
           lightwell:
             description: Optional discovery pin or approved Lightwell artifact; empty means no selection.
             type: dict
-            options:
+            options: &id003
               channel:
                 description: Selected artifact channel.
                 type: str
@@ -172,6 +256,22 @@ argument_specs:
                 description: Covered upstream vulnerabilities.
                 type: list
                 elements: str
+              base_version:
+                description: Upstream version receiving the selected vendor backport.
+                type: str
+              advisory_revision:
+                description: Immutable vendor feed revision used for discovery.
+                type: str
+              advisories:
+                description: Vendor advisory identifiers covering the selected wheel.
+                type: list
+                elements: str
+              advisory_mapping_available:
+                description: Whether vendor-backed vulnerability coverage was discovered.
+                type: bool
+          signing_key_sha256:
+            description: Independently pinned public signing-key SHA256; preserved during discovery.
+            type: str
   assess:
     short_description: Classify an installed version against prepared advisory mappings
     description:
@@ -205,11 +305,7 @@ argument_specs:
           baseline:
             description: Baseline dependency identity.
             type: dict
-            options:
-              version:
-                description: Baseline upstream version.
-                type: str
-                required: true
+            options: *id002
           repository_username:
             description: Private package-index username.
             type: str
@@ -221,63 +317,39 @@ argument_specs:
           lightwell:
             description: Optional discovery pin or approved Lightwell artifact; empty means no selection.
             type: dict
-            options:
-              channel:
-                description: Selected artifact channel.
-                type: str
-                choices:
-                  - lightwell
-              package:
-                description: Selected artifact package.
-                type: str
-              version:
-                description: Selected artifact version.
-                type: str
-              filename:
-                description: Selected artifact filename.
-                type: str
-              sha256:
-                description: Selected artifact sha256.
-                type: str
-              url:
-                description: Selected artifact url.
-                type: str
-              provenance_url:
-                description: Selected artifact provenance url.
-                type: str
-              cves:
-                description: Covered upstream vulnerabilities.
-                type: list
-                elements: str
+            options: *id003
+          signing_key_sha256:
+            description: Independently pinned public signing-key SHA256; preserved during discovery.
+            type: str
   discover:
     short_description: Discover compatible vendor-advised Lightwell wheels
-    description: &id002
+    description: &id004
       - Joins the pinned public Lightwell OSV feed to the authenticated PEP 691 index for the profile package and
         backport base.
       - Returns lightwell_candidates, at most one lightwell_selection, and private lightwell_discovered_material;
         signing trust is not decided here.
-    author: &id003
+    author: &id005
       - ansible software factory demojam
     options:
-      lightwell_advisory_archive: &id004
+      lightwell_advisory_archive: &id006
         description: HTTPS URL of the advisory feed archive to download after the feed revision is pinned; override
           only for an isolated trusted fixture.
         type: str
-      lightwell_advisory_revision: &id005
+      lightwell_advisory_revision: &id007
         description: Immutable Git commit of the public Lightwell OSV feed; empty resolves and pins the current
           vendor main head before download.
         type: str
-      lightwell_base_version: &id006
+      lightwell_base_version: &id008
         description: Upstream version receiving the vendor backport; must match advisory and index metadata for
           candidate wheels.
         type: str
         required: true
-      lightwell_index_origin: &id007
+      lightwell_index_origin: &id009
         description: Origin URL of the authenticated vendor Python index; production uses https://packages.redhat.com
           with credentials from lightwell_material.
         type: str
         default: https://packages.redhat.com
-      lightwell_material: &id008
+      lightwell_material: &id010
         description: Operator-prepared application profile, baseline, and optional pin of version, filename, and
           SHA256 for an approved wheel.
         type: dict
@@ -289,11 +361,7 @@ argument_specs:
             description: Baseline dependency identity.
             type: dict
             required: true
-            options:
-              version:
-                description: Baseline upstream version.
-                type: str
-                required: true
+            options: *id002
           repository_username:
             description: Private package-index username.
             type: str
@@ -307,34 +375,10 @@ argument_specs:
           lightwell:
             description: Optional discovery pin or approved Lightwell artifact; empty means no selection.
             type: dict
-            options:
-              channel:
-                description: Selected artifact channel.
-                type: str
-                choices:
-                  - lightwell
-              package:
-                description: Selected artifact package.
-                type: str
-              version:
-                description: Selected artifact version.
-                type: str
-              filename:
-                description: Selected artifact filename.
-                type: str
-              sha256:
-                description: Selected artifact sha256.
-                type: str
-              url:
-                description: Selected artifact url.
-                type: str
-              provenance_url:
-                description: Selected artifact provenance url.
-                type: str
-              cves:
-                description: Covered upstream vulnerabilities.
-                type: list
-                elements: str
+            options: *id003
+          signing_key_sha256:
+            description: Independently pinned public signing-key SHA256; preserved during discovery.
+            type: str
   release:
     short_description: Validate a candidate release lock against approved material
     description:
@@ -355,11 +399,7 @@ argument_specs:
           baseline:
             description: Baseline dependency identity.
             type: dict
-            options:
-              version:
-                description: Baseline upstream version.
-                type: str
-                required: true
+            options: *id002
           repository_username:
             description: Private package-index username.
             type: str
@@ -408,6 +448,22 @@ argument_specs:
                 type: list
                 required: true
                 elements: str
+              base_version:
+                description: Upstream version receiving the selected vendor backport.
+                type: str
+              advisory_revision:
+                description: Immutable vendor feed revision used for discovery.
+                type: str
+              advisories:
+                description: Vendor advisory identifiers covering the selected wheel.
+                type: list
+                elements: str
+              advisory_mapping_available:
+                description: Whether vendor-backed vulnerability coverage was discovered.
+                type: bool
+          signing_key_sha256:
+            description: Independently pinned public signing-key SHA256; preserved during discovery.
+            type: str
       lightwell_release_file:
         description: Controller-local path to the candidate JSON release manifest; must lock the approved package,
           version, and wheel SHA256.
@@ -415,14 +471,14 @@ argument_specs:
         required: true
   prepare:
     short_description: Discover and securely write prepared Lightwell material
-    description: *id002
-    author: *id003
+    description: *id004
+    author: *id005
     options:
-      lightwell_advisory_archive: *id004
-      lightwell_advisory_revision: *id005
-      lightwell_base_version: *id006
-      lightwell_index_origin: *id007
-      lightwell_material: *id008
+      lightwell_advisory_archive: *id006
+      lightwell_advisory_revision: *id007
+      lightwell_base_version: *id008
+      lightwell_index_origin: *id009
+      lightwell_material: *id010
       lightwell_material_output:
         type: path
         required: true

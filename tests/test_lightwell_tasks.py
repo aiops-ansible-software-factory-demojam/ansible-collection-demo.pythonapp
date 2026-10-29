@@ -33,6 +33,30 @@ def artifact():
             'cves': ['CVE-TEST']}
 
 
+def bootstrap_material():
+    """Carry the complete operator context supplied by demo bootstrap."""
+    policy = profile()
+    policy['application'].update(inventory_group='pythonapps', repository='demo-owner/pythonapp',
+        python_executable='/opt/invoice-portal/current/venv/bin/python',
+        status_path='/api/status', service='invoice-portal')
+    policy['runtime'].update(python='3.12', requires_python=['>=3.6'])
+    policy['advisories'][0].update(cvss_score=6.2, fix_evidence='Vendor advisory feed')
+    policy['validation'].update(adapter='invoice', baseline_expectation='vulnerable',
+        regression={'path': '/api/regression', 'method': 'POST', 'vulnerable_status': 'timed_out',
+                    'remediated_status': 'completed', 'text_contains': 'Invoice INV-1042'})
+    policy['response'] = {'high_severity_threshold': 7.0, 'containment': 'stop_service', 'review_in_days': 30}
+    selected = artifact()
+    selected.update(base_version='3.0.1', advisory_revision=REVISION,
+                    advisories=['RHLW-TEST'], advisory_mapping_available=True)
+    return {'profile': policy,
+            'baseline': {'channel': 'baseline', 'package': 'PyPDF2', 'base_version': '3.0.1',
+                         'version': '3.0.1', 'filename': 'pypdf2-3.0.1-py3-none-any.whl',
+                         'url': 'https://example.test/pypdf2.whl', 'sha256': 'c' * 64,
+                         'cves': ['CVE-TEST']},
+            'lightwell': selected, 'repository_username': 'fixture',
+            'repository_token': 'PRIVATE-FIXTURE-TOKEN', 'signing_key_sha256': 'd' * 64}
+
+
 def advisory():
     return {'id': 'RHLW-TEST', 'upstream': ['CVE-TEST'], 'affected': [
         {'package': {'name': 'pypdf2', 'ecosystem': 'Red Hat Lightwell:PyPI'},
@@ -131,6 +155,10 @@ class LightwellTaskTests(unittest.TestCase):
                     material_output = json.loads(prepared.read_text())
                     self.assertEqual(material_output['lightwell']['sha256'], 'b' * 64)
                     self.assertEqual(material_output['repository_token'], 'PRIVATE-FIXTURE-TOKEN')
+                    for field in ['application', 'runtime', 'validation', 'response']:
+                        self.assertEqual(material_output['profile'].get(field), material['profile'].get(field))
+                    self.assertEqual(material_output['baseline'], material['baseline'])
+                    self.assertEqual(material_output.get('signing_key_sha256'), material.get('signing_key_sha256'))
                 return json.loads((temp / 'result.json').read_text()) if success else None
         finally:
             server.shutdown()
@@ -139,6 +167,9 @@ class LightwellTaskTests(unittest.TestCase):
 
     def test_prepare_discovers_and_privately_writes_material(self):
         self.assertEqual(self.run_tasks('prepare')['sha256'], 'b' * 64)
+
+    def test_prepare_accepts_and_preserves_complete_bootstrap_material(self):
+        self.assertEqual(self.run_tasks('prepare', material=bootstrap_material())['sha256'], 'b' * 64)
 
     def test_raw_aap_checkout_uses_local_release_policy_over_installed_collection(self):
         material = {'profile': profile(), 'baseline': {'version': '3.0.1'}, 'lightwell': artifact(),

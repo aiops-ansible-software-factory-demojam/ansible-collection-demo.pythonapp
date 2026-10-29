@@ -1,0 +1,3 @@
+---
+bugfixes:
+  - lightwell - Accepted and preserved complete bootstrap policy, baseline, signing-key pin, and discovered advisory metadata across public role entry points.
