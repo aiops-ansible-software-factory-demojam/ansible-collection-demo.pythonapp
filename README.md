@@ -10,14 +10,15 @@ Production playbooks target the separate `pythonapps` inventory group. The app e
 | --- | --- |
 | `roles/python_application` | Reusable wheel deployment adapter (provenance, venv, systemd, probes) |
 | `roles/lightwell` | Controller-side Lightwell discovery, assessment, and release policy |
-| `vars/invoice.yml` | Demo application variables; playbooks load this file explicitly |
-| `files/invoice` | Application source copied into each immutable release |
+| `roles/invoice` | Invoice assets, material binding, source/release guards, containment and AAP evidence |
+| `roles/python_application/vars/invoice.yml` | Optional invoice profile for the generic deployment role |
+| `roles/invoice/files/invoice` | Application source copied into each immutable release |
 | `playbooks/` | Deploy, discover, contain, and remediate entry points |
 | `collections/requirements.yml` | Pinned deps for Molecule utility playbooks (`david_igou.molecule_provisioners`) |
 | `meta/runtime.yml` | Minimum ansible-core version (`requires_ansible`) for Galaxy and Automation Hub metadata |
 | `extensions/molecule/` | Shared EC2/KubeVirt scenario lifecycle |
 
-`roles/python_application` verifies exact wheel bytes, package metadata, signed provenance and the pinned public signing key, then installs an isolated release with activation and rollback. `vars/invoice.yml` supplies application settings and business probes; application files live in `files/invoice`. No application wrapper role or inventory settings are needed. Reuse `playbooks/invoice-remediate.yml` when authoring a dependency release. Source guards bind each deployment to its approved collection commit, including AAP copies without `.git`.
+`roles/python_application` verifies exact wheel bytes, package metadata, signed provenance and the pinned public signing key, then installs an isolated release with activation and rollback. `roles/python_application/vars/invoice.yml` supplies application settings and business probes; application files live in `roles/invoice/files/invoice`. Playbooks orchestrate the roles directly; the invoice role does not call other roles or put application settings in inventory. Reuse `playbooks/invoice-remediate.yml` when authoring a dependency release. Source guards bind each deployment to its approved collection commit, including AAP copies without `.git`.
 
 In the managed Omnigent sandbox:
 
@@ -61,7 +62,7 @@ runs retain their existing release-policy checks without a production approval.
 
 `playbooks/contain-invoice.yml` implements the router's approved temporary
 containment path using built-in Ansible modules. Application service details remain
-in `vars/invoice.yml`; profile policy must explicitly permit `stop_service` and name
+in `roles/python_application/vars/invoice.yml`; profile policy must explicitly permit `stop_service` and name
 the same service. The saved response must match the current profile, pinned AAP
 source revision, native `invoice_contain` context and complete `pythonapps` host
 scope. Each host must have one known affected observation and still run that exact

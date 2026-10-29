@@ -2,7 +2,7 @@
 
 This collection owns the Python invoice vulnerability demonstration. The independent nginx/SELinux application lives in `demo.webapp` on a different RHEL host. Production playbooks target `pythonapps`; disposable tests target `molecule`.
 
-Keep application details in `vars/invoice.yml` and application files in `files/invoice`. Call `python_application` directly; do not reintroduce an application wrapper role or put application settings in inventory. Both compatibility entry points import `playbooks/deploy-invoice.yml`.
+Keep invoice lifecycle tasks, material binding and application assets under `roles/invoice`. The optional `roles/python_application/vars/invoice.yml` profile supplies the generic deployment role inputs. Playbooks orchestrate `invoice`, `lightwell` and `python_application` directly; do not nest role calls or put application settings in inventory. Both compatibility entry points import `playbooks/deploy-invoice.yml`.
 
 Use fully qualified Ansible module names and keep roles idempotent. Keep credentials outside roles and repository files. Preserve pinned artifact trust, source identity, release locks, rollback behavior and SELinux enforcing.
 

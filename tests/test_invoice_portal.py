@@ -10,7 +10,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
-APP = ROOT / "files/invoice"
+APP = ROOT / "roles/invoice/files/invoice"
 sys.path.insert(0, str(APP))
 from fixtures import invoice_pdf
 from probe import check, request

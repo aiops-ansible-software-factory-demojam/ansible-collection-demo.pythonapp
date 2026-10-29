@@ -1,0 +1,9 @@
+---
+- name: prepare | Discover the supported remediation
+  ansible.builtin.import_tasks: discover.yml
+- name: prepare | Write prepared material only after successful discovery
+  ansible.builtin.copy:
+    content: '{{ lightwell_discovered_material | to_nice_json }}'
+    dest: '{{ lightwell_material_output }}'
+    mode: '0600'
+  no_log: true

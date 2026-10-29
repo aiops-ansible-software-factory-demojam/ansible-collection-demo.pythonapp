@@ -11,7 +11,7 @@
       - git
       - rev-parse
       - HEAD
-    chdir: "{{ playbook_dir }}/.."
+    chdir: "{{ invoice_collection_directory }}"
   delegate_to: localhost
   become: false
   register: invoice_actual_revision
@@ -25,7 +25,7 @@
       - status
       - --porcelain
       - --untracked-files=all
-    chdir: "{{ playbook_dir }}/.."
+    chdir: "{{ invoice_collection_directory }}"
   delegate_to: localhost
   become: false
   check_mode: false

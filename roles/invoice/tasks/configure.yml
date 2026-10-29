@@ -1,0 +1,4 @@
+---
+- name: configure | Bind application paths to the executing collection role
+  ansible.builtin.set_fact:
+    invoice_collection_directory: '{{ role_path | dirname | dirname }}'

@@ -25,7 +25,7 @@ Import `tasks_from: assess` with `lightwell_installed` to return the public
 Import `tasks_from: release` with `lightwell_release_file` to validate the exact
 single-dependency lock and return `lightwell_release_sha256`.
 
-`playbooks/discover-lightwell.yml` writes prepared material to
+`playbooks/discover-lightwell.yml` calls `tasks_from: prepare`, which discovers and writes prepared material to
 `lightwell_material_output` after successful discovery. It is usable during
 bootstrap without a cluster and uses the same role as AAP catalog discovery.
 
@@ -62,3 +62,6 @@ The channel assertion is retained for assessment of a nonempty selection because
 its optional nested schema must also accept the empty no-fix case.
 Dynamic defaults remain in `defaults/main.yml`; the specs do not eagerly
 evaluate discovery-only defaults while validating assessment or release inputs.
+
+The `prepare` entry requires `lightwell_material_output` as a controller-local
+output path and uses the discovery contract plus a private mode-0600 write.

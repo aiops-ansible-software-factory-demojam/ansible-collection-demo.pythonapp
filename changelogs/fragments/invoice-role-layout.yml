@@ -1,0 +1,5 @@
+---
+minor_changes:
+  - Move invoice application assets, material variables, lifecycle guards and evidence tasks into roles.
+  - Keep direct playbook orchestration and select an explicit invoice vars profile for the generic Python role.
+  - Move Lightwell preparation output into the role and resolve invoice assets independently of caller playbook location.

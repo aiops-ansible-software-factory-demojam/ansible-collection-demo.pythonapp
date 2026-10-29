@@ -27,7 +27,7 @@ class SourceRevisionTests(unittest.TestCase):
         (self.root / "playbooks").mkdir()
         self.ansible = shutil.which("ansible-playbook")
         self.assertIsNotNone(self.ansible, "Run in an Ansible execution environment")
-        source = yaml.safe_load((ROOT / "playbooks/tasks/validate-source.yml").read_text())
+        source = yaml.safe_load((ROOT / "roles/invoice/tasks/validate-source.yml").read_text())
         self.tasks = [copy.deepcopy(task) for task in source if task["name"].split(" | ", 1)[-1] in SOURCE_TASKS]
         self.assertEqual(len(self.tasks), len(SOURCE_TASKS))
         play = [{"name": "Check the invoice source contract", "hosts": "localhost",
@@ -36,6 +36,7 @@ class SourceRevisionTests(unittest.TestCase):
         self.playbook.write_text(yaml.safe_dump(play, sort_keys=False))
 
     def run_guard(self, variables, passes):
+        variables = dict(variables, invoice_collection_directory=str(self.root))
         result = subprocess.run([self.ansible, "-i", "localhost,", str(self.playbook),
                                  "--extra-vars", json.dumps(variables)],
                                 cwd=self.root, text=True, capture_output=True, timeout=60)

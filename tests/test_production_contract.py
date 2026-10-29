@@ -23,7 +23,7 @@ class ProductionContractTests(unittest.TestCase):
                        'invoice_release_contract': {'schema_version': 1, 'source_revision': 'a' * 40,
                         'wheel_sha256': 'b' * 64, 'release_manifest_sha256': 'd' * 64,
                         'material_sha256': hashlib.sha256(json.dumps(material, sort_keys=True).encode()).hexdigest()}}
-        self.tasks = yaml.safe_load((ROOT / 'playbooks/tasks/validate-release-contract.yml').read_text())
+        self.tasks = yaml.safe_load((ROOT / 'roles/invoice/tasks/validate-release-contract.yml').read_text())
 
     def check(self, values, passes):
         with tempfile.TemporaryDirectory() as directory:
@@ -61,7 +61,7 @@ class ProductionContractTests(unittest.TestCase):
         tasks = yaml.safe_load((ROOT / 'playbooks/deploy-invoice.yml').read_text())[0]['tasks']
         names = [t['name'].split(' | ', 1)[-1] for t in tasks]
         self.assertLess(names.index('Require the approved immutable production contract before connecting to guests'),
-                        names.index('Wait for the RHEL guest connection'))
+                        names.index('Prepare and validate the application host'))
 
 
 if __name__ == '__main__':

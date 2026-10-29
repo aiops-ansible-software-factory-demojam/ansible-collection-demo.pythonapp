@@ -38,7 +38,7 @@ argument_specs:
         required: true
         no_log: true
         options:
-          profile: &lightwell_profile
+          profile: &id001
             description: Operator-approved application and vulnerability policy.
             type: dict
             required: true
@@ -201,7 +201,7 @@ argument_specs:
         required: true
         no_log: true
         options:
-          profile: *lightwell_profile
+          profile: *id001
           baseline:
             description: Baseline dependency identity.
             type: dict
@@ -251,40 +251,40 @@ argument_specs:
                 elements: str
   discover:
     short_description: Discover compatible vendor-advised Lightwell wheels
-    description:
+    description: &id002
       - Joins the pinned public Lightwell OSV feed to the authenticated PEP 691 index for the profile package and
         backport base.
       - Returns lightwell_candidates, at most one lightwell_selection, and private lightwell_discovered_material;
         signing trust is not decided here.
-    author:
+    author: &id003
       - ansible software factory demojam
     options:
-      lightwell_advisory_archive:
+      lightwell_advisory_archive: &id004
         description: HTTPS URL of the advisory feed archive to download after the feed revision is pinned; override
           only for an isolated trusted fixture.
         type: str
-      lightwell_advisory_revision:
+      lightwell_advisory_revision: &id005
         description: Immutable Git commit of the public Lightwell OSV feed; empty resolves and pins the current
           vendor main head before download.
         type: str
-      lightwell_base_version:
+      lightwell_base_version: &id006
         description: Upstream version receiving the vendor backport; must match advisory and index metadata for
           candidate wheels.
         type: str
         required: true
-      lightwell_index_origin:
+      lightwell_index_origin: &id007
         description: Origin URL of the authenticated vendor Python index; production uses https://packages.redhat.com
           with credentials from lightwell_material.
         type: str
         default: https://packages.redhat.com
-      lightwell_material:
+      lightwell_material: &id008
         description: Operator-prepared application profile, baseline, and optional pin of version, filename, and
           SHA256 for an approved wheel.
         type: dict
         required: true
         no_log: true
         options:
-          profile: *lightwell_profile
+          profile: *id001
           baseline:
             description: Baseline dependency identity.
             type: dict
@@ -351,7 +351,7 @@ argument_specs:
         required: true
         no_log: true
         options:
-          profile: *lightwell_profile
+          profile: *id001
           baseline:
             description: Baseline dependency identity.
             type: dict
@@ -413,3 +413,17 @@ argument_specs:
           version, and wheel SHA256.
         type: path
         required: true
+  prepare:
+    short_description: Discover and securely write prepared Lightwell material
+    description: *id002
+    author: *id003
+    options:
+      lightwell_advisory_archive: *id004
+      lightwell_advisory_revision: *id005
+      lightwell_base_version: *id006
+      lightwell_index_origin: *id007
+      lightwell_material: *id008
+      lightwell_material_output:
+        type: path
+        required: true
+        description: Controller-local path for private prepared material.

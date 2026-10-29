@@ -11,7 +11,7 @@
       - invoice_response.route == 'contain'
       - invoice_response.affected | bool
       - invoice_material.profile.application.inventory_group == 'pythonapps'
-      - invoice_material.profile.application.service == python_application_service
+      - invoice_material.profile.application.service == invoice_service
       - invoice_material.profile.response.containment == 'stop_service'
       - invoice_response.profile_sha256 == (invoice_material.profile | to_json(sort_keys=true) | hash('sha256'))
       - invoice_response.cvss_score | float >= invoice_material.profile.response.high_severity_threshold | default(7.0) | float

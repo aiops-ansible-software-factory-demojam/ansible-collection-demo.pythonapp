@@ -1,0 +1,11 @@
+---
+- name: prepare-host | Wait for the RHEL guest connection
+  ansible.builtin.wait_for_connection:
+    timeout: 600
+- name: prepare-host | Gather operating system facts
+  ansible.builtin.setup: null
+- name: prepare-host | Require RHEL for application deployment
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.distribution == 'RedHat'
+      - ansible_facts.distribution_major_version in ['9', '10']

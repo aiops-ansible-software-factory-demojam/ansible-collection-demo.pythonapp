@@ -1,0 +1,32 @@
+---
+argument_specs:
+  main:
+    short_description: Bind invoice assets and validate the reviewed deployment source
+    options:
+      invoice_candidate_sha:
+        type: str
+        required: true
+        description: Full approved collection commit; runtime checks require exact execution identity.
+      invoice_release_channel:
+        type: str
+        required: true
+        choices:
+          - baseline
+          - lightwell
+        description: Explicit release origin.
+  contain:
+    short_description: Apply approved temporary service containment
+    options:
+      invoice_material:
+        type: dict
+        required: true
+        no_log: true
+        description: Operator-prepared application and advisory material.
+      invoice_response:
+        type: dict
+        required: true
+        description: Approved response with exact source, policy, incident and target host identities.
+      invoice_findings:
+        type: dict
+        required: true
+        description: Independently observed vulnerable application findings.

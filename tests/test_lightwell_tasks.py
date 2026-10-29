@@ -89,8 +89,10 @@ class LightwellTaskTests(unittest.TestCase):
                              'lightwell_release_file': str(temp / 'release.json'), 'lightwell_advisory_revision': REVISION,
                              'lightwell_advisory_archive': f'http://127.0.0.1:{server.server_port}/feed',
                              'lightwell_index_origin': f'http://127.0.0.1:{server.server_port}', **extra}
+                if operation == 'prepare':
+                    variables['lightwell_material_output'] = str(temp / 'prepared.json')
                 (temp / 'vars.json').write_text(json.dumps(variables))
-                result_expression = {'discover': 'lightwell_selection', 'assess': 'lightwell_finding', 'release': 'lightwell_release_sha256'}[operation]
+                result_expression = {'discover': 'lightwell_selection', 'assess': 'lightwell_finding', 'release': 'lightwell_release_sha256', 'prepare': 'lightwell_selection'}[operation]
                 play = [{'name': 'Test Lightwell tasks', 'hosts': 'localhost', 'connection': 'local', 'gather_facts': False,
                          'tasks': [{'name': 'Run the actual collection role', 'ansible.builtin.include_role':
                                     {'name': 'demo.pythonapp.lightwell', 'tasks_from': operation}},
@@ -123,11 +125,20 @@ class LightwellTaskTests(unittest.TestCase):
                                          '-e', '@' + str(temp / 'vars.json')], env=env, cwd=run_directory, capture_output=True, text=True, timeout=90)
                 self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
                 self.assertNotIn('PRIVATE-FIXTURE-TOKEN', result.stdout + result.stderr)
+                if operation == 'prepare' and success:
+                    prepared = temp / 'prepared.json'
+                    self.assertEqual(prepared.stat().st_mode & 0o777, 0o600)
+                    material_output = json.loads(prepared.read_text())
+                    self.assertEqual(material_output['lightwell']['sha256'], 'b' * 64)
+                    self.assertEqual(material_output['repository_token'], 'PRIVATE-FIXTURE-TOKEN')
                 return json.loads((temp / 'result.json').read_text()) if success else None
         finally:
             server.shutdown()
             server.server_close()
             worker.join()
+
+    def test_prepare_discovers_and_privately_writes_material(self):
+        self.assertEqual(self.run_tasks('prepare')['sha256'], 'b' * 64)
 
     def test_raw_aap_checkout_uses_local_release_policy_over_installed_collection(self):
         material = {'profile': profile(), 'baseline': {'version': '3.0.1'}, 'lightwell': artifact(),

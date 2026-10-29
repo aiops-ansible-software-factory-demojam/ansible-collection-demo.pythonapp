@@ -1,0 +1,4 @@
+---
+invoice_material: '{{ lookup(''ansible.builtin.file'', lookup(''ansible.builtin.env'', ''INVOICE_MATERIAL_FILE''))
+  | from_json }}'
+invoice_service: invoice-portal

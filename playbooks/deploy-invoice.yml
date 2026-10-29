@@ -1,43 +1,40 @@
 ---
-# Local role names intentionally select this reviewed checkout through ansible.cfg.
-# An AAP project is not an installed collection; FQCNs can resolve a different copy.
 - name: deploy-invoice | Deploy and verify the selected invoice release
-  hosts: "{{ invoice_target_group | default('pythonapps') }}"
-  serial: "{{ invoice_canary_batches | default([1, '100%']) }}"
+  hosts: '{{ invoice_target_group | default(''pythonapps'') }}'
+  serial: '{{ invoice_canary_batches | default([1, ''100%'']) }}'
   any_errors_fatal: true
   become: true
   gather_facts: false
-  vars_files:
-    - ../vars/invoice.yml
   tasks:
     - name: deploy-invoice | Validate deployment source identity
-      ansible.builtin.import_tasks: tasks/validate-source.yml
+      ansible.builtin.import_role:
+        name: invoice
     - name: deploy-invoice | Validate the candidate dependency lock against the trusted selection
       ansible.builtin.include_role:
         name: lightwell
         tasks_from: release
       vars:
         lightwell_material: '{{ invoice_material }}'
-        lightwell_release_file: '{{ playbook_dir }}/../{{ invoice_material.profile.application.release_manifest }}'
+        lightwell_release_file: '{{ invoice_collection_directory }}/{{ invoice_material.profile.application.release_manifest
+          }}'
       when: invoice_release_channel == 'lightwell'
     - name: deploy-invoice | Require the approved immutable production contract before connecting to guests
-      ansible.builtin.include_tasks: tasks/validate-release-contract.yml
       when:
         - invoice_release_channel == 'lightwell'
         - awx_job_id is defined
-    - name: deploy-invoice | Wait for the RHEL guest connection
-      ansible.builtin.wait_for_connection:
-        timeout: 600
-    - name: deploy-invoice | Gather operating system facts
-      ansible.builtin.setup: null
-    - name: deploy-invoice | Require RHEL for application deployment
-      ansible.builtin.assert:
-        that:
-          - ansible_facts.distribution == 'RedHat'
-          - ansible_facts.distribution_major_version in ['9', '10']
+      ansible.builtin.include_role:
+        name: invoice
+        tasks_from: validate-release-contract
+    - name: deploy-invoice | Prepare and validate the application host
+      ansible.builtin.import_role:
+        name: invoice
+        tasks_from: prepare-host
     - name: deploy-invoice | Deploy the application from its variable contract
       ansible.builtin.import_role:
         name: python_application
+        vars_from: invoice
     - name: deploy-invoice | Publish verified application evidence
       when: not ansible_check_mode
-      ansible.builtin.import_tasks: tasks/publish-evidence.yml
+      ansible.builtin.import_role:
+        name: invoice
+        tasks_from: publish-evidence
