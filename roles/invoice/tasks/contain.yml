@@ -1,0 +1,37 @@
+---
+- name: contain | Validate approved containment scope
+  ansible.builtin.import_tasks: validate-containment.yml
+- name: contain | Inspect the current dependency before changing service state
+  ansible.builtin.command:
+    argv:
+      - '{{ invoice_material.profile.application.python_executable }}'
+      - -c
+      - import importlib.metadata,json,sys; print(json.dumps({'package':sys.argv[1],'version':importlib.metadata.version(sys.argv[1])}))
+      - '{{ invoice_material.profile.package.name }}'
+  register: invoice_containment_installed
+  changed_when: false
+  check_mode: false
+- name: contain | Require the dependency still matches this approved vulnerable observation
+  ansible.builtin.assert:
+    that:
+      - (invoice_containment_installed.stdout | from_json).version == invoice_containment_observation.installed_version
+- name: contain | Stop and disable the approved application service
+  ansible.builtin.systemd_service:
+    name: '{{ invoice_service }}'
+    state: stopped
+    enabled: false
+- name: contain | Observe actual containment state
+  ansible.builtin.service_facts: null
+  when: not ansible_check_mode
+- name: contain | Require verified inactive and disabled application service
+  when: not ansible_check_mode
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.services[invoice_service ~ '.service'].state == 'stopped'
+      - ansible_facts.services[invoice_service ~ '.service'].status == 'disabled'
+- name: contain | Publish verified temporary containment without marking the CVE fixed
+  when: not ansible_check_mode
+  ansible.builtin.set_stats:
+    data:
+      invoice_containment_hosts: '{{ {inventory_hostname: {''contained'': true, ''fixed'': false, ''service'': invoice_service,
+        ''incident_key'': invoice_response.incident_key}} }}'

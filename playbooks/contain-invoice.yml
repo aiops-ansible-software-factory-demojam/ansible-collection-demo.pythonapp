@@ -4,43 +4,8 @@
   become: true
   gather_facts: false
   any_errors_fatal: true
-  vars_files:
-    - ../vars/invoice.yml
   tasks:
-    - name: contain-invoice | Check containment scope and saved policy before guest access
-      ansible.builtin.import_tasks: tasks/validate-containment.yml
-    - name: contain-invoice | Inspect the current dependency before changing service state
-      ansible.builtin.command:
-        argv:
-          - '{{ invoice_material.profile.application.python_executable }}'
-          - -c
-          - import importlib.metadata,json,sys; print(json.dumps({'package':sys.argv[1],'version':importlib.metadata.version(sys.argv[1])}))
-          - '{{ invoice_material.profile.package.name }}'
-      register: invoice_containment_installed
-      changed_when: false
-      check_mode: false
-    - name: contain-invoice | Require the dependency still matches this approved vulnerable observation
-      ansible.builtin.assert:
-        that:
-          - (invoice_containment_installed.stdout | from_json).version == invoice_containment_observation.installed_version
-    - name: contain-invoice | Stop and disable the approved application service
-      ansible.builtin.systemd_service:
-        name: '{{ python_application_service }}'
-        state: stopped
-        enabled: false
-    - name: contain-invoice | Observe actual containment state
-      ansible.builtin.service_facts:
-      when: not ansible_check_mode
-    - name: contain-invoice | Require verified inactive and disabled application service
-      when: not ansible_check_mode
-      ansible.builtin.assert:
-        that:
-          - ansible_facts.services[python_application_service ~ '.service'].state == 'stopped'
-          - ansible_facts.services[python_application_service ~ '.service'].status == 'disabled'
-    - name: contain-invoice | Publish verified temporary containment without marking the CVE fixed
-      when: not ansible_check_mode
-      ansible.builtin.set_stats:
-        data:
-          invoice_containment_hosts: >-
-            {{ {inventory_hostname: {'contained': true, 'fixed': false, 'service': python_application_service,
-            'incident_key': invoice_response.incident_key}} }}
+    - name: contain-invoice | Apply approved temporary containment
+      ansible.builtin.import_role:
+        name: invoice
+        tasks_from: contain

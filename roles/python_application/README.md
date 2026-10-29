@@ -5,7 +5,7 @@ Requires ansible-core 2.16.0 or newer.
 Installs an independently approved self-contained wheel into a per-release venv,
 checks provenance for Lightwell, activates the release and runs the application's
 probe. Artifact trust and service deployment contain no package names or CVEs.
-Call the role directly with a vars file supplying application source, service command and probes. The invoice example is `vars/invoice.yml`.
+Call the role directly with a vars file supplying application source, service command and probes. The optional invoice profile is `vars/invoice.yml`, selected explicitly with `vars_from: invoice`; its application assets and source context belong to `roles/invoice`.
 
 Callers must supply approved package/version/digest and compatible wheel filenames
 from trusted material, separately from a candidate branch's release manifest.

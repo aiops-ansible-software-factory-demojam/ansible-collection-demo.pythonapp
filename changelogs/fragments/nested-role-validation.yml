@@ -1,0 +1,8 @@
+---
+bugfixes:
+  - Validate nested Lightwell policy inputs for each public role entry point, preserving empty discovery results.
+  - Correct private material argument types and remove conflicting required argument defaults.
+  - Avoid evaluating discovery-only defaults for assessment and release material without baseline metadata.
+  - Keep source identity regression tests working with prefixed Ansible task names.
+minor_changes:
+  - Delegate schema version and Python artifact channel validation to native role argument specs.

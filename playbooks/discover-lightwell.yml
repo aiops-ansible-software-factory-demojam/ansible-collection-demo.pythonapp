@@ -4,13 +4,7 @@
   connection: local
   gather_facts: false
   tasks:
-    - name: discover-lightwell | Discover the supported remediation
+    - name: discover-lightwell | Prepare vendor-discovered material
       ansible.builtin.import_role:
         name: demo.pythonapp.lightwell
-        tasks_from: discover
-    - name: discover-lightwell | Write prepared material only after successful discovery
-      ansible.builtin.copy:
-        content: '{{ lightwell_discovered_material | to_nice_json }}'
-        dest: '{{ lightwell_material_output }}'
-        mode: '0600'
-      no_log: true
+        tasks_from: prepare

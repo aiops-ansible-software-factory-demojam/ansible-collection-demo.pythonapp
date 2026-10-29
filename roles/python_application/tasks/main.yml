@@ -6,7 +6,6 @@
       - python_application_command | length > 0
       - python_application_source | length > 0
       - python_application_source_revision is match('^[0-9a-f]{40}$')
-      - python_application_artifact.channel | default('') in ['baseline', 'lightwell']
       - python_application_artifact.sha256 | default('') is match('^[0-9a-f]{64}$')
       - python_application_artifact.filename | default('') is match('^[A-Za-z0-9_.+-]+[.]whl$')
       - python_application_artifact.version | default('') | length > 0

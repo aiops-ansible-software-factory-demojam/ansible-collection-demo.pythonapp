@@ -1,0 +1,5 @@
+---
+- name: main | Resolve the reviewed invoice collection
+  ansible.builtin.import_tasks: configure.yml
+- name: main | Validate deployment source identity
+  ansible.builtin.import_tasks: validate-source.yml
