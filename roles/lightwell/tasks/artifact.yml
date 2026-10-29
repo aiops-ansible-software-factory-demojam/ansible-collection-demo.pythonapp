@@ -16,19 +16,22 @@
 - name: artifact | Require independently approved advisory coverage for the selected version
   ansible.builtin.assert:
     that:
-      - lightwell_material.lightwell.version in item.fixed_versions | default([])
+      - lightwell_material.lightwell.version in __lightwell_mapping.fixed_versions | default([])
   loop: '{{ lightwell_material.profile.advisories }}'
   loop_control:
-    label: '{{ item.id }}'
+    loop_var: __lightwell_mapping
+    label: '{{ __lightwell_mapping.id }}'
 - name: artifact | Restrict artifact and provenance URLs to the trusted repository
   ansible.builtin.assert:
     that:
-      - item | urlsplit('scheme') == 'https'
-      - item | urlsplit('hostname') == 'packages.redhat.com'
-      - not item | urlsplit('username')
-      - not item | urlsplit('password')
-      - not item | urlsplit('query')
-      - not item | urlsplit('fragment')
+      - __lightwell_artifact_url | urlsplit('scheme') == 'https'
+      - __lightwell_artifact_url | urlsplit('hostname') == 'packages.redhat.com'
+      - not __lightwell_artifact_url | urlsplit('username')
+      - not __lightwell_artifact_url | urlsplit('password')
+      - not __lightwell_artifact_url | urlsplit('query')
+      - not __lightwell_artifact_url | urlsplit('fragment')
   loop:
     - '{{ lightwell_material.lightwell.url }}'
     - '{{ lightwell_material.lightwell.provenance_url }}'
+  loop_control:
+    loop_var: __lightwell_artifact_url

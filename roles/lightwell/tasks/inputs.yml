@@ -12,12 +12,13 @@
 - name: inputs | Validate each vulnerability mapping
   ansible.builtin.assert:
     that:
-      - item.id | length > 0
-      - item.source | length > 0
-      - item.affected_versions | length > 0
+      - __lightwell_advisory.id | length > 0
+      - __lightwell_advisory.source | length > 0
+      - __lightwell_advisory.affected_versions | length > 0
   loop: '{{ lightwell_material.profile.advisories }}'
   loop_control:
-    label: '{{ item.id }}'
+    loop_var: __lightwell_advisory
+    label: '{{ __lightwell_advisory.id }}'
 - name: inputs | Normalize package identity and required advisories
   ansible.builtin.set_fact:
     __lightwell_package: "{{ lightwell_material.profile.package.name | lower | regex_replace('[-_.]+', '-') }}"
