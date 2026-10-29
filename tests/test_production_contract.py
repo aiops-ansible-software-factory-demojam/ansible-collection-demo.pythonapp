@@ -59,7 +59,7 @@ class ProductionContractTests(unittest.TestCase):
 
     def test_guards_run_before_guest_connection(self):
         tasks = yaml.safe_load((ROOT / 'playbooks/deploy-invoice.yml').read_text())[0]['tasks']
-        names = [t['name'] for t in tasks]
+        names = [t['name'].split(' | ', 1)[-1] for t in tasks]
         self.assertLess(names.index('Require the approved immutable production contract before connecting to guests'),
                         names.index('Wait for the RHEL guest connection'))
 

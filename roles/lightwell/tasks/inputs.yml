@@ -2,7 +2,6 @@
 - name: inputs | Validate the application policy inputs
   ansible.builtin.assert:
     that:
-      - lightwell_material.profile.schema_version == 1
       - lightwell_material.profile.application.id is match('^[a-zA-Z0-9_-]+$')
       - lightwell_material.profile.environment | length > 0
       - lightwell_material.profile.package.name | length > 0

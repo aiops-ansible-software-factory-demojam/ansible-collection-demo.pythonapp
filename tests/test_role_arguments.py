@@ -7,6 +7,10 @@ import subprocess
 import tempfile
 import unittest
 
+import yaml
+
+from test_lightwell_tasks import profile, artifact
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -71,7 +75,8 @@ class RoleArgumentTests(unittest.TestCase):
                 self.validate('python_application', 'main', variables, False)
 
     def test_lightwell_entry_points_require_their_own_inputs(self):
-        material = {'profile': {}, 'baseline': {'version': '1'}, 'repository_token': 'PRIVATE-ROLE-TOKEN'}
+        material = {'profile': profile(), 'baseline': {'version': '1'}, 'lightwell': artifact(),
+                    'repository_username': 'fixture', 'repository_token': 'PRIVATE-ROLE-TOKEN'}
         common = {'lightwell_material': material}
         self.validate('lightwell', 'discover', common)
         self.validate('lightwell', 'assess', dict(common, lightwell_installed={'package': 'fixture', 'version': '1'}))
@@ -79,6 +84,62 @@ class RoleArgumentTests(unittest.TestCase):
         self.validate('lightwell', 'assess', common, False)
         self.validate('lightwell', 'assess', dict(common, lightwell_installed={'package': 'fixture'}), False)
         self.validate('lightwell', 'release', common, False)
+
+
+    def test_nested_policy_is_validated_at_every_public_entry(self):
+        for entry in ['discover', 'assess', 'release']:
+            for missing in ['schema_version', 'application', 'runtime', 'validation', 'advisories']:
+                with self.subTest(entry=entry, missing=missing):
+                    material = {'profile': profile(), 'baseline': {'version': '1'}, 'lightwell': artifact(),
+                                'repository_username': 'fixture', 'repository_token': 'PRIVATE-ROLE-TOKEN'}
+                    material['profile'].pop(missing)
+                    self.validate('lightwell', entry, {'lightwell_material': material,
+                        'lightwell_installed': {'package': 'fixture', 'version': '1'},
+                        'lightwell_release_file': '/fixture/release.json'}, False)
+
+    def test_unsupported_schema_and_incomplete_advisory_are_rejected(self):
+        for change in ['schema', 'advisory', 'runtime']:
+            with self.subTest(change=change):
+                policy = profile()
+                if change == 'schema':
+                    policy['schema_version'] = 2
+                elif change == 'advisory':
+                    policy['advisories'][0].pop('affected_versions')
+                else:
+                    policy['runtime']['wheel_tags'] = {'not': 'a list'}
+                self.validate('lightwell', 'assess', {'lightwell_material': {'profile': policy},
+                    'lightwell_installed': {'package': 'fixture', 'version': '1'}}, False)
+
+    def test_discovery_and_assessment_accept_no_selected_fix(self):
+        for selected in [None, {}]:
+            material = {'profile': profile(), 'baseline': {'version': '1'},
+                        'repository_username': 'fixture', 'repository_token': 'PRIVATE-ROLE-TOKEN'}
+            if selected is not None:
+                material['lightwell'] = selected
+            self.validate('lightwell', 'discover', {'lightwell_material': material})
+            self.validate('lightwell', 'assess', {'lightwell_material': material,
+                'lightwell_installed': {'package': 'fixture', 'version': '1'}})
+            self.validate('lightwell', 'release', {'lightwell_material': material,
+                'lightwell_release_file': '/fixture/release.json'}, False)
+
+    def test_release_requires_complete_approved_artifact(self):
+        for key in ['channel', 'package', 'version', 'sha256', 'filename', 'url', 'provenance_url', 'cves']:
+            with self.subTest(missing=key):
+                selected = artifact()
+                selected.pop(key)
+                self.validate('lightwell', 'release', {'lightwell_material': {'profile': profile(), 'lightwell': selected},
+                    'lightwell_release_file': '/fixture/release.json'}, False)
+
+    def test_specs_preserve_private_dictionary_inputs(self):
+        specs = yaml.safe_load((ROOT / 'roles/lightwell/meta/argument_specs.yml').read_text())['argument_specs']
+        for entry, spec in specs.items():
+            with self.subTest(entry=entry):
+                material = spec['options']['lightwell_material']
+                self.assertEqual(material['type'], 'dict')
+                self.assertTrue(material['no_log'])
+                self.assertIn('profile', material['options'])
+                for option in spec['options'].values():
+                    self.assertFalse(option.get('required') and 'default' in option)
 
 
 if __name__ == '__main__':

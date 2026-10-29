@@ -28,7 +28,7 @@ class SourceRevisionTests(unittest.TestCase):
         self.ansible = shutil.which("ansible-playbook")
         self.assertIsNotNone(self.ansible, "Run in an Ansible execution environment")
         source = yaml.safe_load((ROOT / "playbooks/tasks/validate-source.yml").read_text())
-        self.tasks = [copy.deepcopy(task) for task in source if task["name"] in SOURCE_TASKS]
+        self.tasks = [copy.deepcopy(task) for task in source if task["name"].split(" | ", 1)[-1] in SOURCE_TASKS]
         self.assertEqual(len(self.tasks), len(SOURCE_TASKS))
         play = [{"name": "Check the invoice source contract", "hosts": "localhost",
                  "connection": "local", "gather_facts": False, "tasks": self.tasks}]

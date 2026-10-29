@@ -52,3 +52,13 @@ role references with FQCNs without preserving raw-checkout source selection.
 
 `lightwell_discovered_material` contains private repository material. Keep it under
 secure logging and never publish it with the public selection or finding.
+
+The argument specs validate the nested profile, advisory mappings and selected
+artifact types at each public entry point. Discovery and assessment accept an
+absent or empty `lightwell` selection; release requires a complete selection.
+Runtime assertions still enforce nonempty values, safe identifiers and hashes,
+trusted URLs, cross-field identity, advisory coverage and unambiguous selection.
+The channel assertion is retained for assessment of a nonempty selection because
+its optional nested schema must also accept the empty no-fix case.
+Dynamic defaults remain in `defaults/main.yml`; the specs do not eagerly
+evaluate discovery-only defaults while validating assessment or release inputs.
