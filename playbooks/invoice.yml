@@ -1,5 +1,5 @@
 ---
-- name: Deploy the baseline invoice release
+- name: invoice | Deploy the baseline invoice release
   ansible.builtin.import_playbook: deploy-invoice.yml
   vars:
     invoice_release_channel: baseline

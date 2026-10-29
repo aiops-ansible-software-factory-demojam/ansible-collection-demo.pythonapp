@@ -4,7 +4,20 @@ Ansible collection for the Python invoice application and dependency-vulnerabili
 
 Production playbooks target the separate `pythonapps` inventory group. The app extracts normal PDF invoices; the locked upstream PyPDF2 3.0.1 baseline reproduces CVE-2023-36464 as a bounded two-second extraction timeout. The RHEL host remains SELinux enforcing. Updating `releases/invoice.json` selects an independently approved Lightwell backport; production never resolves latest.
 
-`roles/python_application` verifies exact wheel bytes, package metadata, signed provenance and the pinned public signing key, then installs an isolated release with activation and rollback. `vars/invoice.yml` supplies application settings and business probes; application files live in `files/invoice`. No application wrapper role or inventory settings are needed. Reuse `playbooks/invoice-remediate.yml` when authoring a dependency release. Source guards bind each deployment to its approved collection commit, including AAP copies without .git.
+## Layout
+
+| Path | Purpose |
+| --- | --- |
+| `roles/python_application` | Reusable wheel deployment adapter (provenance, venv, systemd, probes) |
+| `roles/lightwell` | Controller-side Lightwell discovery, assessment, and release policy |
+| `vars/invoice.yml` | Demo application variables; playbooks load this file explicitly |
+| `files/invoice` | Application source copied into each immutable release |
+| `playbooks/` | Deploy, discover, contain, and remediate entry points |
+| `collections/requirements.yml` | Pinned deps for Molecule utility playbooks (`david_igou.molecule_provisioners`) |
+| `meta/runtime.yml` | Minimum ansible-core version (`requires_ansible`) for Galaxy and Automation Hub metadata |
+| `extensions/molecule/` | Shared EC2/KubeVirt scenario lifecycle |
+
+`roles/python_application` verifies exact wheel bytes, package metadata, signed provenance and the pinned public signing key, then installs an isolated release with activation and rollback. `vars/invoice.yml` supplies application settings and business probes; application files live in `files/invoice`. No application wrapper role or inventory settings are needed. Reuse `playbooks/invoice-remediate.yml` when authoring a dependency release. Source guards bind each deployment to its approved collection commit, including AAP copies without `.git`.
 
 In the managed Omnigent sandbox:
 
@@ -12,7 +25,9 @@ In the managed Omnigent sandbox:
 source /etc/profile.d/molecule.sh
 source /etc/profile.d/invoice.sh
 export INVOICE_SOURCE_COMMIT=$(git rev-parse HEAD)
-ansible-lint roles/python_application playbooks extensions/molecule/invoice_portal
+ansible-lint --profile production
+# Or lint the roles, playbooks, and invoice_portal scenario only:
+# ansible-lint roles/python_application playbooks extensions/molecule/invoice_portal
 ansible-galaxy collection build --output-path /tmp
 make molecule
 make destroy  # Recover after interruption
@@ -28,7 +43,7 @@ Local behavioral tests use stock PyPDF2 3.0.1 and Ansible. The release-role inte
 python -m unittest discover -s tests -v
 ```
 
-Policy fixtures for other packages are synthetic and do not establish another successful deployed remediation. See the [invoice runbook](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/fix/portable-collection-artifacts/docs/invoice-lightwell-demo.md) for setup, credentials and runtime evidence.
+Policy fixtures for other packages are synthetic and do not establish another successful deployed remediation. See the [invoice runbook](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/main/docs/invoice-lightwell-demo.md) for setup, credentials and runtime evidence.
 
 Lightwell discovery and release-policy checks use the reusable
 [`lightwell` role](roles/lightwell/README.md), built entirely from standard
@@ -65,15 +80,14 @@ baseline deployment, independent RHEL 9/10 acceptance and approved production
 promotion. The actual agent PR updated `releases/invoice.json` to the approved
 Lightwell wheel; prebuilt deployment and regression/rollback tests were reused.
 This does not turn the checked-in vulnerable baseline into a remediated release.
-The collection's 63 local behavioral/packaging tests passed on the tested source;
-local tests are distinct from machine acceptance.
+The collection's local unit and packaging tests validate role contracts on the tested source; they are distinct from machine acceptance in `demojam-ansible`.
 
 `collections/ansible_collections/` is generated installation content: Git ignores
 it and Galaxy excludes it. The packaging fixture includes a cache and an external
-symlink and verifies neither enters the artifact, while a normal
-`collections/requirements.yml` remains included. Keep temporary source exports
-and installed collections separate. The sandbox helper rejects nonportable
+symlink and verifies neither enters the artifact. `collections/requirements.yml`
+declares lint/Molecule collection dependencies and is included in the built artifact.
+Keep temporary source exports and installed collections separate. The sandbox helper rejects nonportable
 committed content before publication.
 
-See the [tested state and source refs](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/fix/portable-collection-artifacts/docs/stable-demo-rehearsal.md)
-and [Draw.io XML diagrams](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/tree/fix/portable-collection-artifacts/docs/diagrams).
+See the [tested state and source refs](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/main/docs/stable-demo-rehearsal.md)
+and [Draw.io XML diagrams](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/tree/main/docs/diagrams).

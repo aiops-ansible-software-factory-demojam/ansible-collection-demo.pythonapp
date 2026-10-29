@@ -57,6 +57,7 @@ Read-only diagnostic commands can legitimately report no change; classify expect
 nonzero results explicitly and retain unexpected failures.
 
 Keep meaningful regression assertions and the complete Molecule lifecycle,
-including idempotence and verification. Run production-profile lint and all final
-checks; preserve actual nonzero exit codes. Do not weaken tests or discard test
+including idempotence and verification. Run `ansible-lint --profile production`
+from the collection root (installs deps from `collections/requirements.yml` first)
+or lint scoped paths after dependencies are present; preserve actual nonzero exit codes. Do not weaken tests or discard test
 state to claim success. Report failed or unavailable checks honestly.

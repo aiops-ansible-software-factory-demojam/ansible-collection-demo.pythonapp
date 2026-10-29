@@ -1,21 +1,21 @@
 ---
-- name: Publish application evidence to AAP
+- name: publish-evidence | Publish application evidence to AAP
   ansible.builtin.set_stats:
     aggregate: false
     data:
       invoice_release_evidence: "{{ python_application_evidence }}"
       invoice_collection_sha: "{{ invoice_execution_revision }}"
-- name: Publish verified dependency lock identity
+- name: publish-evidence | Publish verified dependency lock identity
   when: invoice_release_channel == 'lightwell'
   ansible.builtin.set_stats:
     aggregate: false
     data:
       invoice_release_manifest_sha256: "{{ lightwell_release_sha256 }}"
-- name: Publish per-host deployment evidence
+- name: publish-evidence | Publish per-host deployment evidence
   ansible.builtin.set_stats:
     data:
       invoice_hosts: "{{ {inventory_hostname: python_application_evidence} }}"
-- name: Publish the production contract actually checked by the deployment
+- name: publish-evidence | Publish the production contract actually checked by the deployment
   when:
     - invoice_release_channel == 'lightwell'
     - awx_job_id is defined

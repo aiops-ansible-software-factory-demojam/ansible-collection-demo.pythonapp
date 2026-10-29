@@ -1,5 +1,5 @@
 ---
-- name: Validate the Python application release contract
+- name: main | Validate the Python application release contract
   ansible.builtin.assert:
     that:
       - python_application_probe_argv | length > 0
@@ -17,7 +17,7 @@
       - python_application_port | int < 65536
       - python_application_release_id == python_application_artifact.sha256 + '-' + python_application_source_revision
     fail_msg: Select an exact source commit and a complete approved artifact descriptor.
-- name: Require the operator-approved package identity
+- name: main | Require the operator-approved package identity
   ansible.builtin.assert:
     that:
       - python_application_artifact.package | regex_replace('[-_.]+', '-') | lower == python_application_package
@@ -26,7 +26,7 @@
       - python_application_artifact.version == python_application_approved_version
       - python_application_artifact.filename in python_application_compatible_wheels
     fail_msg: The release must match the independently approved package, version, digest and target wheel compatibility.
-- name: Require Lightwell repository and signing identity
+- name: main | Require Lightwell repository and signing identity
   when: python_application_artifact.channel == 'lightwell'
   ansible.builtin.assert:
     that:
@@ -35,20 +35,20 @@
       - python_application_signing_key | length > 0
       - python_application_signing_key_sha256 is match('^[0-9a-f]{64}$')
     fail_msg: Lightwell releases require provenance and a separately pinned trusted signing key.
-- name: Inspect the selected release
+- name: main | Inspect the selected release
   ansible.builtin.stat:
     path: "{{ python_application_root }}/releases/{{ python_application_release_id }}"
   register: __python_application_release
-- name: Validate an existing sealed release before reuse
+- name: main | Validate an existing sealed release before reuse
   when: __python_application_release.stat.exists
   ansible.builtin.include_tasks: validate-existing.yml
-- name: Report planned release activation
+- name: main | Report planned release activation
   when: ansible_check_mode
   ansible.builtin.debug:
     msg: >-
       Would authenticate the artifact and activate release {{ python_application_release_id }}. Downloads, installation,
       service changes and business probes require a normal run.
   changed_when: not __python_application_release.stat.exists
-- name: Authenticate and deploy the selected release
+- name: main | Authenticate and deploy the selected release
   when: not ansible_check_mode
   ansible.builtin.include_tasks: stage.yml

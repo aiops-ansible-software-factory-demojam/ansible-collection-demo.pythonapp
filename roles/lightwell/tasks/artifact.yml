@@ -1,5 +1,5 @@
 ---
-- name: Require a fully mapped immutable Lightwell selection
+- name: artifact | Require a fully mapped immutable Lightwell selection
   ansible.builtin.assert:
     that:
       - lightwell_material.lightwell.channel == 'lightwell'
@@ -13,14 +13,14 @@
         (lightwell_material.lightwell.filename | regex_search('-(' +
         (lightwell_material.profile.runtime.wheel_tags | map('regex_escape') | join('|')) + ')\.whl$')) is not none
     fail_msg: The selection must match the package, runtime, digest and complete advisory set.
-- name: Require independently approved advisory coverage for the selected version
+- name: artifact | Require independently approved advisory coverage for the selected version
   ansible.builtin.assert:
     that:
       - lightwell_material.lightwell.version in item.fixed_versions | default([])
   loop: '{{ lightwell_material.profile.advisories }}'
   loop_control:
     label: '{{ item.id }}'
-- name: Restrict artifact and provenance URLs to the trusted repository
+- name: artifact | Restrict artifact and provenance URLs to the trusted repository
   ansible.builtin.assert:
     that:
       - item | urlsplit('scheme') == 'https'

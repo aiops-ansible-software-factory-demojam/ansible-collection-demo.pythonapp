@@ -1,19 +1,19 @@
 ---
-- name: Check sandbox test prerequisites
+- name: create | Check sandbox test prerequisites
   hosts: localhost
   connection: local
   gather_facts: false
   vars:
     molecule_backend: "{{ lookup('ansible.builtin.env', 'PROVISIONER', default='kubevirt') }}"
   tasks:
-    - name: Require the sandbox test kubeconfig
+    - name: create | Require the sandbox test kubeconfig
       when: molecule_backend == 'kubevirt'
       ansible.builtin.assert:
         that:
           - lookup('ansible.builtin.env', 'KUBECONFIG') | length > 0
         fail_msg: Run this scenario in a demo Omnigent sandbox with its test credential mount.
 
-    - name: Read the golden image DataSource
+    - name: create | Read the golden image DataSource
       when: molecule_backend == 'kubevirt'
       vars:
         molecule_boot_source: "{{ hostvars[item].mp.kubevirt.boot_source }}"
@@ -25,7 +25,7 @@
       loop: "{{ groups['molecule'] }}"
       register: molecule_datasources
 
-    - name: Require a ready golden image
+    - name: create | Require a ready golden image
       when: molecule_backend == 'kubevirt'
       vars:
         molecule_boot_source: "{{ hostvars[item.item].mp.kubevirt.boot_source }}"
@@ -43,7 +43,7 @@
       loop_control:
         label: "{{ item.item }}"
 
-- name: Provision molecule instances
+- name: create | Provision molecule instances
   ansible.builtin.import_playbook: david_igou.molecule_provisioners.create
   vars:
     molecule_scenario_name: "{{ lookup('ansible.builtin.env', 'MOLECULE_SCENARIO_NAME') }}"

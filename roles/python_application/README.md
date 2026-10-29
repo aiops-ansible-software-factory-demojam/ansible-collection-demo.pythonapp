@@ -1,5 +1,7 @@
 # Python application release adapter
 
+Requires ansible-core 2.16.0 or newer.
+
 Installs an independently approved self-contained wheel into a per-release venv,
 checks provenance for Lightwell, activates the release and runs the application's
 probe. Artifact trust and service deployment contain no package names or CVEs.
@@ -34,6 +36,6 @@ artifact signatures or protection against an attacker with root access.
 
 Role argument validation requires caller-supplied source, command, probe, revision,
 artifact and independent approval inputs before deployment. The artifact channel
-accepts only `baseline` or `lightwell`. Root, service and port retain their usable
+accepts only `baseline` or `lightwell`. See `meta/argument_specs.yml` for the full contract. Root, service and port retain their usable
 role defaults; runtime assertions still enforce safe paths, exact hashes, trusted
 URLs and the additional Lightwell signing requirements.

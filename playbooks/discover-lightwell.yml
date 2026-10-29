@@ -1,14 +1,14 @@
 ---
-- name: Prepare vendor-discovered Lightwell material using built-in Ansible modules
+- name: discover-lightwell | Prepare vendor-discovered Lightwell material using built-in Ansible modules
   hosts: localhost
   connection: local
   gather_facts: false
   tasks:
-    - name: Discover the supported remediation
+    - name: discover-lightwell | Discover the supported remediation
       ansible.builtin.import_role:
         name: demo.pythonapp.lightwell
         tasks_from: discover
-    - name: Write prepared material only after successful discovery
+    - name: discover-lightwell | Write prepared material only after successful discovery
       ansible.builtin.copy:
         content: '{{ lightwell_discovered_material | to_nice_json }}'
         dest: '{{ lightwell_material_output }}'

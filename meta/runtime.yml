@@ -1,2 +1,3 @@
 ---
+# Matches role meta/main.yml min_ansible_version and collection playbooks.
 requires_ansible: '>=2.16.0'

@@ -1,5 +1,7 @@
 # Lightwell discovery and release policy
 
+Requires ansible-core 2.16.0 or newer.
+
 A controller-side role using only built-in Ansible modules. Application details
 and credentials are inputs through `lightwell_material`; no target host is changed.
 

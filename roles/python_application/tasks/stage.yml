@@ -1,5 +1,5 @@
 ---
-- name: Allocate private controller staging
+- name: stage | Allocate private controller staging
   ansible.builtin.tempfile:
     state: directory
     prefix: python-artifact-
@@ -7,9 +7,9 @@
   become: false
   register: python_application_stage
   changed_when: false
-- name: Stage and authenticate the selected dependency
+- name: stage | Stage and authenticate the selected dependency
   block:
-    - name: Download the exact wheel to the execution environment
+    - name: stage | Download the exact wheel to the execution environment
       ansible.builtin.get_url:
         url: "{{ python_application_artifact.url }}"
         dest: "{{ python_application_stage.path }}/{{ python_application_artifact.filename }}"
@@ -25,7 +25,7 @@
       become: false
       changed_when: false
       no_log: true
-    - name: Fetch Lightwell wheel provenance
+    - name: stage | Fetch Lightwell wheel provenance
       when: python_application_artifact.channel == 'lightwell'
       ansible.builtin.get_url:
         url: "{{ python_application_artifact.provenance_url }}"
@@ -41,7 +41,7 @@
       become: false
       changed_when: false
       no_log: true
-    - name: Write the public artifact contract
+    - name: stage | Write the public artifact contract
       ansible.builtin.copy:
         content: >-
           {{ python_application_artifact | combine({'approved_package': python_application_package, 'approved_sha256':
@@ -52,7 +52,7 @@
       delegate_to: localhost
       become: false
       changed_when: false
-    - name: Check wheel identity and cryptographic provenance
+    - name: stage | Check wheel identity and cryptographic provenance
       ansible.builtin.command:
         argv:
           - "{{ ansible_playbook_python }}"
@@ -68,10 +68,10 @@
       delegate_to: localhost
       become: false
       changed_when: false
-    - name: Install the authenticated application release
+    - name: stage | Install the authenticated application release
       ansible.builtin.include_tasks: install.yml
   always:
-    - name: Remove controller staging and downloaded metadata
+    - name: stage | Remove controller staging and downloaded metadata
       ansible.builtin.file:
         path: "{{ python_application_stage.path }}"
         state: absent

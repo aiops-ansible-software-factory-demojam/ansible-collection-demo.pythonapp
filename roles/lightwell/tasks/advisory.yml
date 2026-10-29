@@ -1,12 +1,12 @@
 ---
-- name: Read a candidate vendor advisory
+- name: advisory | Read a candidate vendor advisory
   ansible.builtin.slurp:
     src: '{{ lightwell_advisory_file.path }}'
   register: __lightwell_record_bytes
-- name: Decode the vendor advisory
+- name: advisory | Decode the vendor advisory
   ansible.builtin.set_fact:
     __lightwell_record: '{{ __lightwell_record_bytes.content | b64decode | from_json }}'
-- name: Collect matching package and base-version remediation evidence
+- name: advisory | Collect matching package and base-version remediation evidence
   ansible.builtin.include_tasks: advisory-package.yml
   loop: '{{ __lightwell_record.affected | default([]) }}'
   loop_control:

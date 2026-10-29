@@ -1,5 +1,5 @@
 ---
-- name: Require production deployment through the reusable approval workflow
+- name: validate-release-contract | Require production deployment through the reusable approval workflow
   ansible.builtin.assert:
     that:
       - awx_workflow_job_id | default(0) | int > 0

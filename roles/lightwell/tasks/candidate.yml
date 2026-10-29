@@ -1,5 +1,5 @@
 ---
-- name: Retain non-yanked compatible wheels with complete advisory coverage
+- name: candidate | Retain non-yanked compatible wheels with complete advisory coverage
   vars:
     __lightwell_filename: '{{ lightwell_catalog_file.filename }}'
     __lightwell_parts: '{{ __lightwell_filename[:-4].split("-") }}'

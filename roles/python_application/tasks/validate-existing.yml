@@ -1,12 +1,12 @@
 ---
-- name: Verify the existing release seal
+- name: validate-existing | Verify the existing release seal
   ansible.builtin.script:
     cmd: >-
       seal_release.py verify {{ python_application_root }}/releases/{{ python_application_release_id }}
     executable: "{{ python_application_python }}"
   check_mode: false
   changed_when: false
-- name: Check existing application files against the reviewed source
+- name: validate-existing | Check existing application files against the reviewed source
   ansible.builtin.copy:
     src: "{{ python_application_source }}"
     dest: "{{ python_application_root }}/releases/{{ python_application_release_id }}/app/"
@@ -18,12 +18,12 @@
   diff: false
   register: __python_application_source_comparison
   failed_when: __python_application_source_comparison.changed
-- name: Read the sealed release identity
+- name: validate-existing | Read the sealed release identity
   ansible.builtin.slurp:
     src: >-
       {{ python_application_root }}/releases/{{ python_application_release_id }}/app/release.json
   register: __python_application_release_identity
-- name: Require the existing release to match the selected artifact and source
+- name: validate-existing | Require the existing release to match the selected artifact and source
   ansible.builtin.assert:
     that:
       - (__python_application_release_identity.content | b64decode | from_json).source_revision == python_application_source_revision

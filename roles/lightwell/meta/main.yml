@@ -1,9 +1,9 @@
 ---
 galaxy_info:
-  author: Demo Maintainer
+  author: ansible software factory demojam
   description: Discover and validate vendor-backed Python remediation evidence.
   license: MIT
-  min_ansible_version: '2.16'
+  min_ansible_version: 2.16.0
   platforms:
     - name: EL
       versions:

@@ -1,77 +1,24 @@
 ---
 argument_specs:
   main:
-    short_description: Deploy a verified Python application release from variables
+    short_description: Deploy a verified Python wheel release on RHEL
+    description:
+      - Installs one independently approved self-contained wheel into an immutable per-release virtual environment.
+      - Verifies Lightwell provenance when required, activates the release, runs health and business probes, and preserves rollback on failure.
+    author:
+      - ansible software factory demojam
     options:
-      python_application_root:
+      python_application_approved_sha256:
+        description: Lowercase SHA256 of the wheel bytes, approved separately from the candidate manifest.
         type: str
-        description: Absolute release root under /opt, matching ^/opt/[a-zA-Z0-9_-]+$; defaults to /opt/python-application.
-      python_application_service:
-        type: str
-        description: Systemd service name containing only letters, digits, underscores and hyphens; defaults to
-          python-application.
-      python_application_user:
-        type: str
-        description: Dedicated system account used to run the application; defaults to python-application.
-      python_application_port:
-        type: int
-        description: Application TCP listen port from 1 through 65535; defaults to 80.
-      python_application_health_path:
-        type: str
-        description: HTTP path used for release readiness; defaults to /healthz.
-      python_application_python:
-        type: str
-        description: Absolute application Python interpreter path; defaults to /usr/bin/python3.12.
-      python_application_python_packages:
-        type: list
-        description: Distribution packages providing the interpreter and pip; defaults select the RHEL 9 or RHEL
-          10 runtime.
-        elements: str
-      python_application_source:
-        type: str
-        description: Controller-local directory containing reviewed application files to copy into each immutable
-          release.
         required: true
-      python_application_command:
-        type: list
-        description: Nonempty argument list for the systemd application command, using the activated release paths.
-        elements: str
+      python_application_approved_version:
+        description: Distribution version approved independently of the candidate release manifest.
+        type: str
         required: true
-      python_application_environment:
-        type: dict
-        description: Environment variables for the managed application service; defaults to an empty mapping.
-      python_application_probe_argv:
-        type: list
-        description: Nonempty argument list for the application-specific business and regression probe after activation.
-        elements: str
-        required: true
-      python_application_source_revision:
-        type: str
-        description: Exact lowercase 40-character Git SHA identifying the reviewed application collection.
-        required: true
-      python_application_expected:
-        type: str
-        description: Expected business probe result label; defaults to remediated.
-      python_application_repository_username:
-        type: str
-        description: Private repository username used only for authenticated Lightwell downloads; empty for a baseline
-          artifact.
-        no_log: true
-      python_application_repository_token:
-        type: str
-        description: Private repository access token used only for authenticated Lightwell downloads; never publish
-          this value.
-        no_log: true
-      python_application_signing_key:
-        type: str
-        description: Controller-local public signing key file; required by runtime validation for a Lightwell release.
-      python_application_signing_key_sha256:
-        type: str
-        description: Operator-pinned lowercase 64-character SHA256 of the public signing key file.
       python_application_artifact:
+        description: Complete wheel descriptor; package, version, digest, and filename must match the independent approval inputs.
         type: dict
-        description: Complete immutable wheel descriptor; identity is independently compared with the operator-approved
-          values.
         required: true
         options:
           channel:
@@ -80,62 +27,132 @@ argument_specs:
             choices:
               - baseline
               - lightwell
-            description: Approved artifact origin; Lightwell additionally requires provenance and pinned signing
-              trust.
+            description: Release origin; lightwell additionally requires packages.redhat.com URLs, provenance, and a pinned signing key.
           package:
             type: str
             required: true
-            description: Distribution name contained in the wheel metadata.
+            description: Distribution name from wheel metadata; normalized before comparison to python_application_package.
           version:
             type: str
             required: true
-            description: Exact installed distribution version.
+            description: Exact version string installed from the wheel.
           sha256:
             type: str
             required: true
-            description: Lowercase SHA256 of the approved wheel bytes.
+            description: Lowercase SHA256 of the wheel file bytes.
           filename:
             type: str
             required: true
-            description: Safe wheel basename matching an approved compatible filename.
+            description: Wheel basename; must appear in python_application_compatible_wheels.
           url:
             type: str
             required: true
-            description: HTTPS wheel download URL; Lightwell URLs must use packages.redhat.com.
+            description: HTTPS URL to download the wheel; lightwell URLs must use packages.redhat.com.
           provenance_url:
             type: str
-            description: Vendor provenance URL required for Lightwell releases.
+            description: HTTPS provenance document URL on packages.redhat.com; required when channel is lightwell.
           base_version:
             type: str
-            description: Upstream version receiving the vendor backport.
+            description: Upstream application version receiving the vendor backport; carried for lightwell artifacts.
           advisory_revision:
             type: str
-            description: Pinned vendor advisory feed commit used during discovery.
+            description: Pinned public Lightwell OSV feed commit used when the wheel was discovered.
           cves:
             type: list
             elements: str
-            description: Approved vulnerability identifiers mapped to the selected vendor fix.
+            description: CVE identifiers the selected vendor fix is intended to address.
           advisories:
             type: list
             elements: str
             description: Vendor advisory identifiers establishing remediation coverage.
           advisory_mapping_available:
             type: bool
-            description: Whether preparation found a complete vendor-backed advisory mapping.
-      python_application_package:
-        type: str
-        description: Independently approved distribution name; normalization must match the artifact package.
-        required: true
-      python_application_approved_sha256:
-        type: str
-        description: Independently approved lowercase 64-character SHA256 of the wheel bytes.
-        required: true
-      python_application_approved_version:
-        type: str
-        description: Exact independently approved installed distribution version.
-        required: true
-      python_application_compatible_wheels:
+            description: Whether preparation recorded a complete vendor-backed advisory mapping for this artifact.
+      python_application_command:
+        description: Non-empty argv list for the systemd ExecStart command using paths under the activated release.
         type: list
-        description: Approved compatible wheel filenames; the selected artifact filename must be present.
-        elements: str
         required: true
+        elements: str
+      python_application_compatible_wheels:
+        description: Filenames of wheels approved for this target platform; the selected artifact filename must be listed.
+        type: list
+        required: true
+        elements: str
+      python_application_environment:
+        description: Environment variables injected into the managed application service unit.
+        type: dict
+        default: {}
+      python_application_expected:
+        description: Label the business probe must report for a successful remediation (for example remediated).
+        type: str
+        default: remediated
+      python_application_health_path:
+        description: HTTP path queried for readiness after the service starts.
+        type: str
+        default: /healthz
+      python_application_package:
+        description: Independently approved distribution name; normalized and matched to the artifact package.
+        type: str
+        required: true
+      python_application_port:
+        description: TCP port the application listens on (1 through 65535).
+        type: int
+        default: 80
+      python_application_probe_argv:
+        description: Non-empty argv list for the post-activation business and regression probe.
+        type: list
+        required: true
+        elements: str
+      python_application_python:
+        description: Absolute path to the Python interpreter used inside each release virtual environment.
+        type: str
+        default: /usr/bin/python3.12
+      python_application_python_packages:
+        description: RPM packages installed to provide the interpreter and pip; defaults select RHEL 10 python3 or RHEL 9 python3.12.
+        type: list
+        default: "{{ ['python3', 'python3-pip'] if ansible_facts.distribution_major_version | default('9') == '10'\n   else\
+          \ ['python3.12', 'python3.12-pip'] }}"
+        elements: str
+      python_application_release_id:
+        description: Immutable release directory name formed from the wheel SHA256 and reviewed collection source revision.
+        type: str
+        default: '{{ python_application_artifact.sha256 }}-{{ python_application_source_revision }}'
+        version_added: 0.1.0
+      python_application_repository_token:
+        description: Private index token used only for authenticated lightwell wheel downloads; never log or publish.
+        type: str
+        default: ''
+        no_log: true
+      python_application_repository_username:
+        description: Private index username for lightwell downloads; leave empty for baseline artifacts.
+        type: str
+        default: ''
+        no_log: true
+      python_application_root:
+        description: Absolute directory under /opt holding immutable releases (must match ^/opt/[a-zA-Z0-9_-]+$).
+        type: str
+        default: /opt/python-application
+      python_application_service:
+        description: systemd unit name (letters, digits, underscores, and hyphens only).
+        type: str
+        default: python-application
+      python_application_signing_key:
+        description: Controller-local path to the trusted public key file; required when channel is lightwell.
+        type: str
+        default: ''
+      python_application_signing_key_sha256:
+        description: Lowercase SHA256 of the public signing key file, pinned by the operator independently of the candidate.
+        type: str
+        default: ''
+      python_application_source:
+        description: Controller-local directory of reviewed application files copied into each new release tree.
+        type: str
+        required: true
+      python_application_source_revision:
+        description: Lowercase 40-character Git commit SHA of the reviewed application source in the collection checkout.
+        type: str
+        required: true
+      python_application_user:
+        description: Dedicated system account that owns release files and runs the service.
+        type: str
+        default: python-application

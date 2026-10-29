@@ -1,5 +1,5 @@
 ---
-- name: Validate the application policy inputs
+- name: inputs | Validate the application policy inputs
   ansible.builtin.assert:
     that:
       - lightwell_material.profile.schema_version == 1
@@ -10,7 +10,7 @@
       - lightwell_material.profile.runtime.wheel_tags | length > 0
       - lightwell_material.profile.validation.scenario | length > 0
       - lightwell_material.profile.validation.business_checks | length > 0
-- name: Validate each vulnerability mapping
+- name: inputs | Validate each vulnerability mapping
   ansible.builtin.assert:
     that:
       - item.id | length > 0
@@ -19,7 +19,7 @@
   loop: '{{ lightwell_material.profile.advisories }}'
   loop_control:
     label: '{{ item.id }}'
-- name: Normalize package identity and required advisories
+- name: inputs | Normalize package identity and required advisories
   ansible.builtin.set_fact:
     __lightwell_package: "{{ lightwell_material.profile.package.name | lower | regex_replace('[-_.]+', '-') }}"
     __lightwell_advisories: '{{ lightwell_material.profile.advisories | map(attribute="id") | sort | list }}'

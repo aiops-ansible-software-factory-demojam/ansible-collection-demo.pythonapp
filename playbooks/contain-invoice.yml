@@ -1,5 +1,5 @@
 ---
-- name: Contain the approved vulnerable application without claiming remediation
+- name: contain-invoice | Contain the approved vulnerable application without claiming remediation
   hosts: pythonapps
   become: true
   gather_facts: false
@@ -7,9 +7,9 @@
   vars_files:
     - ../vars/invoice.yml
   tasks:
-    - name: Check containment scope and saved policy before guest access
+    - name: contain-invoice | Check containment scope and saved policy before guest access
       ansible.builtin.import_tasks: tasks/validate-containment.yml
-    - name: Inspect the current dependency before changing service state
+    - name: contain-invoice | Inspect the current dependency before changing service state
       ansible.builtin.command:
         argv:
           - '{{ invoice_material.profile.application.python_executable }}'
@@ -19,25 +19,25 @@
       register: invoice_containment_installed
       changed_when: false
       check_mode: false
-    - name: Require the dependency still matches this approved vulnerable observation
+    - name: contain-invoice | Require the dependency still matches this approved vulnerable observation
       ansible.builtin.assert:
         that:
           - (invoice_containment_installed.stdout | from_json).version == invoice_containment_observation.installed_version
-    - name: Stop and disable the approved application service
+    - name: contain-invoice | Stop and disable the approved application service
       ansible.builtin.systemd_service:
         name: '{{ python_application_service }}'
         state: stopped
         enabled: false
-    - name: Observe actual containment state
+    - name: contain-invoice | Observe actual containment state
       ansible.builtin.service_facts:
       when: not ansible_check_mode
-    - name: Require verified inactive and disabled application service
+    - name: contain-invoice | Require verified inactive and disabled application service
       when: not ansible_check_mode
       ansible.builtin.assert:
         that:
           - ansible_facts.services[python_application_service ~ '.service'].state == 'stopped'
           - ansible_facts.services[python_application_service ~ '.service'].status == 'disabled'
-    - name: Publish verified temporary containment without marking the CVE fixed
+    - name: contain-invoice | Publish verified temporary containment without marking the CVE fixed
       when: not ansible_check_mode
       ansible.builtin.set_stats:
         data:

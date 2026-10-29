@@ -1,13 +1,13 @@
 ---
-- name: Verify the test machine identities
+- name: verify | Verify the test machine identities
   ansible.builtin.import_playbook: ../utils/playbooks/verify.yml
 
-- name: Verify application behavior and system policy
+- name: verify | Verify application behavior and system policy
   hosts: molecule
   become: true
   gather_facts: false
   tasks:
-    - name: Verify the real vulnerability regression
+    - name: verify | Verify the real vulnerability regression
       ansible.builtin.command:
         argv:
           - /usr/bin/python3.12
@@ -17,7 +17,7 @@
           - remediated
       changed_when: false
 
-    - name: Require SELinux enforcing after deployment
+    - name: verify | Require SELinux enforcing after deployment
       ansible.builtin.command: getenforce
       register: invoice_selinux
       changed_when: false

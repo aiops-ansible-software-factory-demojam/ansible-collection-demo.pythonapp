@@ -1,5 +1,5 @@
 ---
-- name: Exercise the candidate authored workflow on disposable machines
+- name: converge | Exercise the candidate authored workflow on disposable machines
   ansible.builtin.import_playbook: ../../../playbooks/invoice-remediate.yml
   vars:
     invoice_target_group: molecule

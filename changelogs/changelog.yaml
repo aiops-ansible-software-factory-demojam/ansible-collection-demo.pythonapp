@@ -1,0 +1,23 @@
+---
+ancestor: null
+releases:
+  1.0.0:
+    changes:
+      doc_changes:
+        - Align task naming with strict ansible-lint production profile and document collection metadata layout.
+      minor_changes:
+        - Bump collection version to 1.0.0 for Galaxy metadata compliance.
+    fragments: []
+  0.1.0:
+    changes:
+      minor_changes:
+        - Document and validate Lightwell discovery, assessment and release entry points through native role argument specifications.
+        - Require caller-supplied Python release inputs and validate artifact channels while retaining usable role defaults.
+        - Initial demo.pythonapp collection with invoice portal automation and Molecule scenarios.
+        - Pin dependency releases and provide RHEL EC2 remediation test coverage.
+      bugfixes:
+        - Exclude generated collection caches from Git and collection artifacts so local installation links cannot enter a remediation release.
+        - Preserve lazy advisory archive resolution during argument validation and document local role selection for raw AAP checkouts.
+    fragments:
+      - portable-collection-artifacts.yml
+      - role-argument-contracts.yml

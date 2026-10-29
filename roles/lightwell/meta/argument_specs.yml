@@ -1,60 +1,159 @@
 ---
 argument_specs:
-  discover:
-    short_description: Discover one compatible vendor-advised remediation
+  main:
+    short_description: Shared Lightwell policy variables for all entry points
+    description:
+      - Controller-side role that reads operator material and vendor feeds; it does not change target hosts.
+      - Import a specific tasks_from entry (discover, assess, or release) instead of relying on this default spec alone.
+    author:
+      - ansible software factory demojam
     options:
-      lightwell_material:
-        type: dict
-        required: true
-        no_log: true
-        description: Operator-prepared application profile, baseline and optional approved Lightwell selection;
-          includes private repository credentials. Policy and artifact assertions remain authoritative.
-      lightwell_base_version:
-        type: str
-        required: true
-        description: Backport base version to match in the advisory feed; defaults to the prepared baseline version.
-      lightwell_advisory_revision:
-        type: str
-        description: Immutable advisory feed commit; an empty value resolves and pins the current vendor revision.
       lightwell_advisory_archive:
+        description: HTTPS URL of the pinned Lightwell OSV advisory feed archive (GitHub codeload tarball for the resolved revision).
         type: str
-        description: Archive URL for the pinned advisory revision; override only for an isolated trusted fixture.
+        default: https://codeload.github.com/project-lightwell/lightwell-osv/tar.gz/{{ __lightwell_advisory_revision | default(lightwell_advisory_revision)
+          }}
+        version_added: 0.1.0
+      lightwell_advisory_revision:
+        description: Immutable Git commit of the public Lightwell OSV feed; empty on new preparation resolves and pins the vendor main head.
+        type: str
+        default: '{{ lightwell_material.lightwell.advisory_revision | default('''') }}'
+        version_added: 0.1.0
+      lightwell_base_version:
+        description: Upstream version receiving the vendor backport; defaults to the baseline version in prepared material.
+        type: str
+        default: '{{ lightwell_material.baseline.version }}'
+        version_added: 0.1.0
       lightwell_index_origin:
+        description: Origin URL of the authenticated vendor Python index; repository credentials are taken from lightwell_material.
         type: str
-        description: Origin of the authenticated vendor Python index; production defaults to https://packages.redhat.com.
-  assess:
-    short_description: Assess the observed version against operator advisory mappings
-    options:
+        default: https://packages.redhat.com
+        version_added: 0.1.0
       lightwell_material:
-        type: dict
-        required: true
-        no_log: true
-        description: Operator-prepared application profile, baseline and optional approved Lightwell selection;
-          includes private repository credentials. Policy and artifact assertions remain authoritative.
+        description: Parsed JSON from INVOICE_MATERIAL_FILE with application profile, baseline, optional approved wheel, and private index credentials.
+        type: str
+        default: '{{ lookup(''ansible.builtin.file'', lookup(''ansible.builtin.env'', ''INVOICE_MATERIAL_FILE'')) | from_json
+          }}'
+        version_added: 0.1.0
+  assess:
+    short_description: Classify an installed version against prepared advisory mappings
+    description:
+      - Requires lightwell_installed with the observed package name and version from the target runtime.
+      - Validates prepared material when an approved Lightwell selection is present, then returns lightwell_finding without repository secrets.
+    author:
+      - ansible software factory demojam
+    options:
+      lightwell_advisory_archive:
+        description: HTTPS URL of the pinned Lightwell OSV advisory feed archive used when validating an approved selection.
+        type: str
+        default: https://codeload.github.com/project-lightwell/lightwell-osv/tar.gz/{{ __lightwell_advisory_revision | default(lightwell_advisory_revision)
+          }}
+        version_added: 0.1.0
+      lightwell_advisory_revision:
+        description: Immutable Git commit of the public Lightwell OSV feed referenced by prepared material or discovery.
+        type: str
+        default: '{{ lightwell_material.lightwell.advisory_revision | default('''') }}'
+        version_added: 0.1.0
+      lightwell_base_version:
+        description: Upstream backport base version from prepared material; used when validating an approved artifact.
+        type: str
+        default: '{{ lightwell_material.baseline.version }}'
+        version_added: 0.1.0
+      lightwell_index_origin:
+        description: Origin URL of the authenticated vendor Python index; credentials come from lightwell_material.
+        type: str
+        default: https://packages.redhat.com
+        version_added: 0.1.0
       lightwell_installed:
+        description: Observed installed distribution on the target, collected independently of vendor feeds.
         type: dict
         required: true
-        description: Observed installed distribution identity, collected independently from the target runtime.
         options:
           package:
             type: str
             required: true
-            description: Installed distribution name; must normalize to the profile package.
+            description: Installed distribution name; normalized and compared to the profile package.
           version:
             type: str
             required: true
-            description: Exact installed version; unknown versions remain unclassified.
-  release:
-    short_description: Validate the candidate lock against the approved artifact
-    options:
+            description: Exact installed version string; versions outside advisory mappings remain unknown.
       lightwell_material:
+        description: Operator-prepared application profile, baseline, and optional approved Lightwell wheel, including private repository credentials.
         type: dict
         required: true
+        default: '{{ lookup(''ansible.builtin.file'', lookup(''ansible.builtin.env'', ''INVOICE_MATERIAL_FILE'')) | from_json
+          }}'
         no_log: true
-        description: Operator-prepared application profile, baseline and optional approved Lightwell selection;
-          includes private repository credentials. Policy and artifact assertions remain authoritative.
+  discover:
+    short_description: Discover compatible vendor-advised Lightwell wheels
+    description:
+      - Joins the pinned public Lightwell OSV feed to the authenticated PEP 691 index for the profile package and backport base.
+      - Returns lightwell_candidates, at most one lightwell_selection, and private lightwell_discovered_material; signing trust is not decided here.
+    author:
+      - ansible software factory demojam
+    options:
+      lightwell_advisory_archive:
+        description: HTTPS URL of the advisory feed archive to download after the feed revision is pinned; override only for an isolated trusted fixture.
+        type: str
+        default: https://codeload.github.com/project-lightwell/lightwell-osv/tar.gz/{{ __lightwell_advisory_revision | default(lightwell_advisory_revision)
+          }}
+      lightwell_advisory_revision:
+        description: Immutable Git commit of the public Lightwell OSV feed; empty resolves and pins the current vendor main head before download.
+        type: str
+        default: '{{ lightwell_material.lightwell.advisory_revision | default('''') }}'
+      lightwell_base_version:
+        description: Upstream version receiving the vendor backport; must match advisory and index metadata for candidate wheels.
+        type: str
+        required: true
+        default: '{{ lightwell_material.baseline.version }}'
+      lightwell_index_origin:
+        description: Origin URL of the authenticated vendor Python index; production uses https://packages.redhat.com with credentials from lightwell_material.
+        type: str
+        default: https://packages.redhat.com
+      lightwell_material:
+        description: Operator-prepared application profile, baseline, and optional pin of version, filename, and SHA256 for an approved wheel.
+        type: dict
+        required: true
+        default: '{{ lookup(''ansible.builtin.file'', lookup(''ansible.builtin.env'', ''INVOICE_MATERIAL_FILE'')) | from_json
+          }}'
+        no_log: true
+  release:
+    short_description: Validate a candidate release lock against approved material
+    description:
+      - Reads a controller-local JSON release manifest and asserts it locks exactly one Lightwell dependency matching prepared material.
+      - Returns lightwell_release_sha256 as the canonical hash of the validated manifest.
+    author:
+      - ansible software factory demojam
+    options:
+      lightwell_advisory_archive:
+        description: HTTPS URL of the pinned Lightwell OSV advisory feed archive used when validating the approved wheel selection.
+        type: str
+        default: https://codeload.github.com/project-lightwell/lightwell-osv/tar.gz/{{ __lightwell_advisory_revision | default(lightwell_advisory_revision)
+          }}
+        version_added: 0.1.0
+      lightwell_advisory_revision:
+        description: Immutable Git commit of the public Lightwell OSV feed referenced by the approved selection.
+        type: str
+        default: '{{ lightwell_material.lightwell.advisory_revision | default('''') }}'
+        version_added: 0.1.0
+      lightwell_base_version:
+        description: Upstream backport base version from prepared material; used when validating the approved artifact.
+        type: str
+        default: '{{ lightwell_material.baseline.version }}'
+        version_added: 0.1.0
+      lightwell_index_origin:
+        description: Origin URL of the authenticated vendor Python index; credentials come from lightwell_material.
+        type: str
+        default: https://packages.redhat.com
+        version_added: 0.1.0
+      lightwell_material:
+        description: Operator-prepared application profile, baseline, and approved Lightwell wheel identity (package, version, SHA256).
+        type: dict
+        required: true
+        default: '{{ lookup(''ansible.builtin.file'', lookup(''ansible.builtin.env'', ''INVOICE_MATERIAL_FILE'')) | from_json
+          }}'
+        no_log: true
       lightwell_release_file:
+        description: Controller-local path to the candidate JSON release manifest; must lock the approved package, version, and wheel SHA256.
         type: path
         required: true
-        description: Controller-local candidate JSON release manifest; must lock the exact approved package, version
-          and SHA256.

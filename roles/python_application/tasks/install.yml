@@ -1,9 +1,9 @@
 ---
-- name: Check for cloud-init on the application guest
+- name: install | Check for cloud-init on the application guest
   ansible.builtin.stat:
     path: /usr/bin/cloud-init
   register: python_application_cloud_init
-- name: Wait for boot configuration before package installation
+- name: install | Wait for boot configuration before package installation
   when: python_application_cloud_init.stat.exists
   ansible.builtin.command:
     argv:
@@ -14,41 +14,41 @@
   changed_when: false
   failed_when: python_application_boot.rc != 0
   timeout: 600
-- name: Install the RHEL Python runtime
+- name: install | Install the RHEL Python runtime
   ansible.builtin.package:
     name: "{{ python_application_python_packages }}"
     state: present
-- name: Require SELinux enforcing
+- name: install | Require SELinux enforcing
   ansible.builtin.command: getenforce
   register: python_application_selinux
   changed_when: false
   failed_when: python_application_selinux.stdout | trim != 'Enforcing'
-- name: Create the application service account
+- name: install | Create the application service account
   ansible.builtin.user:
     name: "{{ python_application_user }}"
     system: true
     create_home: false
     shell: /sbin/nologin
-- name: Prepare the selected release once
+- name: install | Prepare the selected release once
   when: not __python_application_release.stat.exists
   ansible.builtin.include_tasks: prepare-release.yml
-- name: Check the currently installed service definition
+- name: install | Check the currently installed service definition
   ansible.builtin.stat:
     path: "/etc/systemd/system/{{ python_application_service }}.service"
   register: python_application_previous_unit
-- name: Preserve the previous service definition for recovery
+- name: install | Preserve the previous service definition for recovery
   when: python_application_previous_unit.stat.exists
   ansible.builtin.slurp:
     src: "/etc/systemd/system/{{ python_application_service }}.service"
   register: python_application_previous_unit_content
   no_log: true
-- name: Discover the current release
+- name: install | Discover the current release
   ansible.builtin.stat:
     path: "{{ python_application_root }}/current"
   register: python_application_current
-- name: Activate and verify the selected release
+- name: install | Activate and verify the selected release
   block:
-    - name: Install the hardened application service
+    - name: install | Install the hardened application service
       ansible.builtin.template:
         src: application.service.j2
         dest: "/etc/systemd/system/{{ python_application_service }}.service"
@@ -57,14 +57,14 @@
         mode: '0644'
       register: python_application_unit
       no_log: true
-    - name: Select the application release
+    - name: install | Select the application release
       ansible.builtin.file:
         src: "{{ python_application_root }}/releases/{{ python_application_release_id }}"
         dest: "{{ python_application_root }}/current"
         state: link
         force: true
       register: python_application_switch
-    - name: Start the Python application
+    - name: install | Start the Python application
       ansible.builtin.systemd_service:
         name: "{{ python_application_service }}"
         daemon_reload: "{{ python_application_unit.changed }}"
@@ -72,7 +72,7 @@
         state: >-
           {{ 'restarted' if python_application_switch.changed or python_application_unit.changed else 'started'
           }}
-    - name: Wait for the application health endpoint
+    - name: install | Wait for the application health endpoint
       ansible.builtin.uri:
         url: >-
           http://127.0.0.1:{{ python_application_port }}{{ python_application_health_path }}
@@ -81,23 +81,23 @@
       until: python_application_health.status | default(0) == 200
       retries: 10
       delay: 2
-    - name: Verify the exact deployed artifact and application behavior
+    - name: install | Verify the exact deployed artifact and application behavior
       ansible.builtin.command:
         argv: "{{ python_application_probe_argv }}"
       register: python_application_verification
       changed_when: false
-    - name: Publish verified release facts
+    - name: install | Publish verified release facts
       ansible.builtin.set_fact:
         python_application_evidence: "{{ python_application_verification.stdout | from_json }}"
   rescue:
-    - name: Restore the previous release after failed validation
+    - name: install | Restore the previous release after failed validation
       when: python_application_current.stat.islnk | default(false)
       ansible.builtin.file:
         src: "{{ python_application_current.stat.lnk_source }}"
         dest: "{{ python_application_root }}/current"
         state: link
         force: true
-    - name: Restore the previous service definition
+    - name: install | Restore the previous service definition
       when: python_application_previous_unit.stat.exists
       ansible.builtin.copy:
         content: "{{ python_application_previous_unit_content.content | b64decode }}"
@@ -106,18 +106,18 @@
         group: root
         mode: '0644'
       no_log: true
-    - name: Restart the restored release
+    - name: install | Restart the restored release
       when: python_application_current.stat.islnk | default(false)
       ansible.builtin.systemd_service:
         name: "{{ python_application_service }}"
         state: restarted
         daemon_reload: true
-    - name: Stop a failed initial release when there is no previous release
+    - name: install | Stop a failed initial release when there is no previous release
       when: not (python_application_current.stat.islnk | default(false))
       ansible.builtin.systemd_service:
         name: "{{ python_application_service }}"
         state: stopped
-    - name: Verify the previous release responds after restoration
+    - name: install | Verify the previous release responds after restoration
       when: python_application_current.stat.islnk | default(false)
       ansible.builtin.uri:
         url: >-
@@ -127,7 +127,7 @@
       until: python_application_restored.status | default(0) == 200
       retries: 10
       delay: 2
-    - name: Report the unsuccessful deployment
+    - name: install | Report the unsuccessful deployment
       ansible.builtin.fail:
         msg: Application release validation failed. A previous release was restored when available; the incident
           remains unresolved. Inspect AAP job output before another deployment.
