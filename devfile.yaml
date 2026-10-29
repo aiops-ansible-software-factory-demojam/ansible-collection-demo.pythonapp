@@ -42,9 +42,9 @@ commands:
         isDefault: true
   - id: molecule-test
     exec:
-      label: molecule test (CentOS Stream 10 KubeVirt VM)
+      label: molecule test (all scenarios, selected backend)
       component: tools
-      commandLine: make molecule
+      commandLine: env MOLECULE_GLOB='extensions/molecule/*/molecule.yml' molecule test --all
       workingDir: /projects/collection
       group:
         kind: test

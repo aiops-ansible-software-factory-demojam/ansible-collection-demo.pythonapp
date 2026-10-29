@@ -30,8 +30,9 @@ ansible-lint --profile production
 # Or lint the roles, playbooks, and invoice_portal scenario only:
 # ansible-lint roles/python_application playbooks extensions/molecule/invoice_portal
 ansible-galaxy collection build --output-path /tmp
-make molecule
-make destroy  # Recover after interruption
+export MOLECULE_GLOB='extensions/molecule/*/molecule.yml'
+molecule test --all
+molecule destroy --all  # Recover after interruption
 ```
 
 Use mounted Lightwell material/signing trust and the sandbox's scoped AWS test credentials. Both pinned RHEL 9 and RHEL 10 guests must finish creation, convergence, idempotence, verification and destruction. The initial release lock is deliberately the vulnerable baseline, so a real remediation candidate must select the approved Lightwell version before these acceptance tests pass.
@@ -92,3 +93,8 @@ committed content before publication.
 
 See the [tested state and source refs](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/blob/main/docs/stable-demo-rehearsal.md)
 and [Draw.io XML diagrams](https://github.com/aiops-ansible-software-factory-demojam/openshift-gitops/tree/main/docs/diagrams).
+
+Run Molecule directly; no Makefile wrapper is needed. `MOLECULE_GLOB` selects
+this collection's scenarios under `extensions/molecule/`. Use `molecule converge --all` for convergence or `molecule destroy --all` to recover owned resources,
+with the same exported glob, sandbox environment and saved ownership records.
+See the [Molecule CLI reference](https://docs.ansible.com/projects/molecule/usage/).
