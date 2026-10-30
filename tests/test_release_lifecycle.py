@@ -1,6 +1,7 @@
 """Exercise release integrity and real Ansible check mode without services or downloads."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 import shutil
 import subprocess
@@ -58,10 +59,37 @@ class ReleaseSealTests(unittest.TestCase):
 
 class ReleaseCheckModeTests(unittest.TestCase):
     def setUp(self):
-        # The public role deliberately confines production releases to /opt.
-        self.tmp = tempfile.TemporaryDirectory(prefix='invoice-role-review-', dir='/opt')
+        self.tmp = tempfile.TemporaryDirectory(prefix='invoice-role-review-')
         self.addCleanup(self.tmp.cleanup)
         self.root = Path(self.tmp.name)
+        # Model the filesystem boundary in an isolated role copy. Production's
+        # /opt confinement and root ownership remain unchanged; the original
+        # public entry point is exercised separately below and on real RHEL.
+        self.role = self.root / 'role'
+        shutil.copytree(ROOT / 'roles/python_application', self.role)
+        main_path = self.role / 'tasks/main.yml'
+        main = yaml.safe_load(main_path.read_text())
+        root_guard = "python_application_root is match('^/opt/[a-zA-Z0-9_-]+$')"
+        guards = main[0]['ansible.builtin.assert']['that']
+        self.assertIn(root_guard, guards)
+        guards[guards.index(root_guard)] = 'python_application_root == ' + json.dumps(str(self.root))
+        main_path.write_text(yaml.safe_dump(main, sort_keys=False))
+
+        def fixture_ownership(value):
+            if isinstance(value, list):
+                for item in value:
+                    fixture_ownership(item)
+            elif isinstance(value, dict):
+                for key, identity in [('owner', os.getuid()), ('group', os.getgid())]:
+                    if value.get(key) == 'root':
+                        value[key] = str(identity)
+                for item in value.values():
+                    fixture_ownership(item)
+
+        for tasks_path in (self.role / 'tasks').glob('*.yml'):
+            tasks = yaml.safe_load(tasks_path.read_text())
+            fixture_ownership(tasks)
+            tasks_path.write_text(yaml.safe_dump(tasks, sort_keys=False))
         self.source = self.root / 'source'
         self.source.mkdir()
         (self.source / 'program.py').write_text('reviewed code\n')
@@ -85,10 +113,10 @@ class ReleaseCheckModeTests(unittest.TestCase):
             'python_application_compatible_wheels': ['fixture-1-py3-none-any.whl'],
         }
 
-    def run_role(self, passes):
+    def run_role(self, passes, role=None):
         play = [{'name': 'Review generic release check mode', 'hosts': 'localhost', 'connection': 'local',
                  'gather_facts': False, 'vars': self.variables,
-                 'roles': [{'role': str(ROOT / 'roles/python_application')}]}]
+                 'roles': [{'role': str(role or self.role)}]}]
         p = self.root / 'check.yml'
         p.write_text(yaml.safe_dump(play, sort_keys=False))
         run = subprocess.run(['ansible-playbook', '-i', 'localhost,', '--check', str(p)],
@@ -108,6 +136,15 @@ class ReleaseCheckModeTests(unittest.TestCase):
     def test_new_release_check_mode_does_not_create_release(self):
         self.run_role(True)
         self.assertFalse((self.release_root / 'releases').exists())
+
+    def test_original_role_retains_production_root_confinement(self):
+        approved = '/opt/invoice-role-review-' + self.root.name
+        for root, passes in [(approved, True), (str(self.root), False),
+                             ('/opt/nested/application', False), ('/opt/../application', False)]:
+            with self.subTest(root=root):
+                self.variables['python_application_root'] = root
+                self.run_role(passes, ROOT / 'roles/python_application')
+        self.assertFalse(Path(approved).exists())
 
     def test_existing_release_check_mode_preserves_contents(self):
         self.make_release()
@@ -139,7 +176,7 @@ class ReleaseCheckModeTests(unittest.TestCase):
         play = [{'name': 'Exercise failed release preparation', 'hosts': 'localhost',
                  'connection': 'local', 'gather_facts': False, 'vars': variables,
                  'tasks': [{'name': 'Prepare a new release', 'ansible.builtin.include_role': {
-                     'name': str(ROOT / 'roles/python_application'),
+                     'name': str(self.role),
                      'tasks_from': 'prepare-release.yml'}}]}]
         path = self.root / 'failure.yml'
         path.write_text(yaml.safe_dump(play, sort_keys=False))

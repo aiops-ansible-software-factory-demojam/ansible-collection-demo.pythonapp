@@ -1,0 +1,4 @@
+---
+minor_changes:
+  - python_application - Isolated release lifecycle fixtures from privileged host paths and ownership while preserving
+    production role constraints and checking the original public entry point's root confinement.
